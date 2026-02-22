@@ -65,7 +65,8 @@ void parse_iterator(char **buf, unsigned *iter) {
       (*buf)++;
       s++;
     }
-    (*buf)++;
+    if (*iter != 0)
+      (*buf)++;
   }
   /*
   printf("the capture %s\n", capture);
@@ -83,7 +84,7 @@ void parse_args(char *buf, char **argv, size_t *argn) {
   char *p = buf;
   size_t argc = 0;
   while (*p != '\0') {
-    for (size_t i = 0; *p != ' '; p++) {
+    for (size_t i = 0; *p != ' ' && *p != '\0'; p++) {
       capture[i++] = *p;
     }
     argv[argc++] = strdup(capture);
@@ -91,7 +92,7 @@ void parse_args(char *buf, char **argv, size_t *argn) {
     p++;
     memset(capture, 0, sizeof(capture));
   }
-  argv[++argc] = NULL;
+  argv[argc + 1] = NULL;
   *argn = argc;
 }
 
