@@ -40,8 +40,8 @@ ssize_t read_command(char *buf) {
 }
 
 // len bruh
-int mylen(char **c) {
-  int len = 0;
+size_t mylen(char **c) {
+  size_t len = 0;
   while (c[len] != NULL)
     len++;
   return len;
@@ -49,7 +49,7 @@ int mylen(char **c) {
 
 // remove a newline by replace it with \0
 void mystrcspn(char **c) {
-  int len = 0;
+  size_t len = 0;
   while ((*c)[len] != '\n')
     len++;
   (*c)[len] = '\0';
