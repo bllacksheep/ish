@@ -183,7 +183,8 @@ void parse_expr(size_t argc, char **argv) {
       if (*arg == '=') {
         // add key to hash table
         puts(key);
-        i = 0;
+        // next increment will be to 0
+        i = -1;
         state = VALUE;
         // skip '='
         arg++;
@@ -209,7 +210,7 @@ void parse_expr(size_t argc, char **argv) {
       perror("error");
       return;
     case NEXT:
-      i = 0;
+      i = -1;
       memset(key, 0, sizeof(key));
       memset(val, 0, sizeof(val));
       argv++;
