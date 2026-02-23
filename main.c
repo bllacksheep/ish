@@ -10,6 +10,7 @@ ssize_t read_command(char *);
 void repl();
 void exec_command(int, char **);
 void mystrcspn(char **c);
+void destroy_args(int, char **);
 
 void repl() {
   char command[MAX + 1] = {0};
@@ -110,6 +111,14 @@ void parse_args(char *buf, char **argv, size_t *argn) {
   *argn = argc;
 }
 
+// destroy args allocated with strdup
+void destroy_args(int argc, char **argv) {
+  for (int i = 0; i < argc; i++) {
+    if (argv[i] != NULL)
+      free(argv[i]);
+  }
+}
+
 // parser orchestroator pull together iterator + command + args
 void parser(char *c) {
   // real parsing logic on c goes here
@@ -137,9 +146,11 @@ void parser(char *c) {
     for (int i = 0; i < iterator; i++) {
       exec_command(arg_count, arg_vector);
     }
+    destroy_args(arg_count, arg_vector);
     return;
   }
   exec_command(arg_count, arg_vector);
+  destroy_args(arg_count, arg_vector);
   return;
 }
 
