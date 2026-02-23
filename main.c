@@ -56,6 +56,7 @@ void parse_iterator(char **buf, unsigned *iter) {
   for (; *p != ' ' && *p != '\0'; capture[i++] = *p++)
     ;
 
+  // "10 ls" 0
   for (int j = 0; j < i; j++) {
     if (capture[j] == '0' || capture[j] == '1' || capture[j] == '2' ||
         capture[j] == '3' || capture[j] == '4' || capture[j] == '5' ||
@@ -65,7 +66,7 @@ void parse_iterator(char **buf, unsigned *iter) {
       (*buf)++;
       s++;
     }
-    if (*iter != 0)
+    if ((*buf)[0] == ' ')
       (*buf)++;
   }
   /*
@@ -109,7 +110,11 @@ void parser(char *c) {
   // return or set argc, command must end with NULL see execv
   parse_args(c, arg_vector, &arg_count);
 
+  /*
   printf("num args %zu\n", arg_count);
+  printf("iterator %u\n", iterator);
+  fflush(stdout);
+  */
 
   // handle builtins here
   if (strcmp(c, "exit") == 0)
