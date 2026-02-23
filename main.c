@@ -152,8 +152,10 @@ char *getval(char *k) {
   char dummy[] = "1234";
   char *p = malloc(strlen(dummy) + 1);
   int i = 0;
-  while (dummy[i] != '\0')
+  while (dummy[i] != '\0') {
     p[i] = dummy[i];
+    i++;
+  }
   p[i] = '\0';
   return p;
 }
@@ -201,7 +203,7 @@ void parse_expr(size_t argc, char **argv) {
         break;
       }
       if (*arg == '\0') {
-        getval(key);
+        puts(getval(key));
         state = DONE;
         break;
       }
@@ -234,6 +236,12 @@ void parse_expr(size_t argc, char **argv) {
         // add value to hash table
         puts(val);
         state = NEXT;
+        break;
+      }
+      if (*arg == '$') {
+        arg++;
+        val[i] = *arg;
+        state = GETVALUE;
         break;
       }
       state = ERROR;
