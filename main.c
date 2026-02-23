@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -148,9 +149,76 @@ void destroy_args(size_t argc, char **argv) {
 }
 
 void parse_expr(size_t argc, char **argv) {
-  while (*argv != NULL) {
-    printf("%s\n", *argv);
-    argv++;
+  char key[MAX + 1] = {0};
+  char val[MAX + 1] = {0};
+
+  enum {
+    IDLE,
+    KEY,
+    VALUE,
+    ERROR,
+    NEXT,
+  } state = IDLE;
+
+  char *arg = NULL;
+
+  for (int i = 0; *argv != NULL; i++) {
+    switch (state) {
+    case IDLE:
+      arg = *argv;
+      if (isalpha(*arg)) {
+        key[i] = *arg;
+        arg++;
+        state = KEY;
+        break;
+      }
+      state = ERROR;
+      break;
+    case KEY:
+      if (isalpha(*arg)) {
+        key[i] = *arg;
+        arg++;
+        break;
+      }
+      if (*arg == '=') {
+        // add key to hash table
+        puts(key);
+        i = 0;
+        state = VALUE;
+        // skip '='
+        arg++;
+        break;
+      }
+      state = ERROR;
+      break;
+    case VALUE:
+      if (isalpha(*arg)) {
+        val[i] = *arg;
+        arg++;
+        break;
+      }
+      if (*arg == '\0') {
+        // add value to hash table
+        puts(val);
+        state = NEXT;
+        break;
+      }
+      state = ERROR;
+      break;
+    case ERROR:
+      perror("error");
+      return;
+    case NEXT:
+      i = 0;
+      memset(key, 0, sizeof(key));
+      memset(val, 0, sizeof(val));
+      argv++;
+      state = IDLE;
+      break;
+    default:
+      return;
+      break;
+    }
   }
 }
 
