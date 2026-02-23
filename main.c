@@ -5,12 +5,15 @@
 #include <unistd.h>
 #define MAX 100
 
+typedef struct parse_state parse_state_t;
 void parser(char *);
 ssize_t read_command(char *);
 void repl();
-void exec_command(int, char **);
+void exec_command(size_t, char **);
 void mystrcspn(char **c);
-void destroy_args(int, char **);
+void destroy_args(size_t, char **);
+void parse_expr(size_t, char **);
+void has_iterator(parse_state_t);
 
 void repl() {
   char command[MAX + 1] = {0};
@@ -89,6 +92,7 @@ void parse_iterator(char **buf, size_t *iter) {
   char capture[MAX + 1] = {0};
   char *p = *buf;
   size_t i = 0, s = 0;
+
   for (; *p != ' ' && *p != '\0'; capture[i++] = *p++)
     ;
 
@@ -103,6 +107,7 @@ void parse_iterator(char **buf, size_t *iter) {
 
   has_iterator(state);
 
+  // skip space if present
   if ((*buf)[0] == ' ')
     (*buf)++;
   /*
@@ -135,10 +140,17 @@ void parse_args(char *buf, char **argv, size_t *argn) {
 }
 
 // destroy args allocated with strdup
-void destroy_args(int argc, char **argv) {
+void destroy_args(size_t argc, char **argv) {
   for (int i = 0; i < argc; i++) {
     if (argv[i] != NULL)
       free(argv[i]);
+  }
+}
+
+void parse_expr(size_t argc, char **argv) {
+  while (*argv != NULL) {
+    printf("%s\n", *argv);
+    argv++;
   }
 }
 
@@ -151,11 +163,10 @@ void parser(char *c) {
   char *arg_vector[MAX] = {0};
 
   parse_iterator(&c, &iterator);
-
   // by convention use cmd ... args ... NULL terminate in NULL
   // return or set argc, command must end with NULL see execv
   parse_args(c, arg_vector, &arg_count);
-
+  parse_expr(arg_count, arg_vector);
   /*
   printf("num args %zu\n", arg_count);
   printf("iterator %u\n", iterator);
@@ -178,7 +189,7 @@ void parser(char *c) {
 }
 
 // fork exec
-void exec_command(int argc, char **argv) {
+void exec_command(size_t argc, char **argv) {
   pid_t pid;
   pid = fork();
 
