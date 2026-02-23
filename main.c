@@ -56,9 +56,31 @@ void mystrcspn(char **c) {
   (*c)[len] = '\0';
 }
 
+typedef struct parse_state {
+  char *keyword;
+  char **cmd_buffer;
+  char *curr_buf_pos;
+  size_t *iterator;
+  size_t kwlen;
+  size_t scale;
+} parse_state_t;
+
+void has_iterator(parse_state_t s) {
+  char *kw = s.keyword;
+  for (int j = 0; j < s.kwlen; j++) {
+    if (kw[j] == '0' || kw[j] == '1' || kw[j] == '2' || kw[j] == '3' ||
+        kw[j] == '4' || kw[j] == '5' || kw[j] == '6' || kw[j] == '7' ||
+        kw[j] == '8' || kw[j] == '9') {
+      *s.iterator = *s.iterator * 10 + (kw[j] - '0');
+      (*s.cmd_buffer)++;
+      s.scale++;
+    }
+  }
+}
+
 // parse out the number from the start of a command if exists
 // step the command pointer forward to pos arg 1 the actual command name
-void parse_iterator(char **buf, unsigned *iter) {
+void parse_iterator(char **buf, size_t *iter) {
   if (buf == NULL && *buf == NULL && *iter != 0) {
     perror("parse iterator");
     exit(EXIT_FAILURE);
@@ -70,18 +92,19 @@ void parse_iterator(char **buf, unsigned *iter) {
   for (; *p != ' ' && *p != '\0'; capture[i++] = *p++)
     ;
 
-  for (int j = 0; j < i; j++) {
-    if (capture[j] == '0' || capture[j] == '1' || capture[j] == '2' ||
-        capture[j] == '3' || capture[j] == '4' || capture[j] == '5' ||
-        capture[j] == '6' || capture[j] == '7' || capture[j] == '8' ||
-        capture[j] == '9') {
-      *iter = *iter * 10 + (capture[j] - '0');
-      (*buf)++;
-      s++;
-    }
-    if ((*buf)[0] == ' ')
-      (*buf)++;
-  }
+  parse_state_t state = {
+      .keyword = capture,
+      .cmd_buffer = buf,
+      .curr_buf_pos = p,
+      .iterator = iter,
+      .kwlen = i,
+      .scale = s,
+  };
+
+  has_iterator(state);
+
+  if ((*buf)[0] == ' ')
+    (*buf)++;
   /*
   printf("the capture %s\n", capture);
   printf("iter is %u\n", *iter);
@@ -122,7 +145,7 @@ void destroy_args(int argc, char **argv) {
 // parser orchestroator pull together iterator + command + args
 void parser(char *c) {
   // real parsing logic on c goes here
-  unsigned iterator = 0;
+  size_t iterator = 0;
   size_t arg_count = 0;
   // soft max on num args per command
   char *arg_vector[MAX] = {0};
