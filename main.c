@@ -6,20 +6,28 @@
 #define MAX 100
 
 void parser(char *);
-char *get_command(char *);
+ssize_t read_command(char *);
 void repl();
 void exec_command(int, char **);
 void mystrcspn(char **c);
 
 void repl() {
-  char command[MAX + 1];
+  char command[MAX + 1] = {0};
   printf("> ");
   fflush(stdout);
-  parser(get_command(command));
+  switch (read_command(command)) {
+  case 1:
+    if (command[0] == '\n')
+      break;
+    break;
+  default:
+    parser(command);
+    break;
+  }
 }
 
 // read in the input and remove any newline at the end of the command
-char *get_command(char *buf) {
+ssize_t read_command(char *buf) {
   ssize_t n = read(STDIN_FILENO, buf, MAX);
   if (n == -1) {
     perror("get command");
@@ -28,7 +36,7 @@ char *get_command(char *buf) {
   buf[n] = '\0';
   // newline in input command must be removed or break
   mystrcspn(&buf);
-  return buf;
+  return n;
 }
 
 // len bruh
