@@ -156,6 +156,7 @@ void exec_command(int argc, char **argv) {
   case 0:
     // vp path aware
     execvp(argv[0], argv);
+    break;
   default:
     // in sys/wait.h
     wait(NULL);
