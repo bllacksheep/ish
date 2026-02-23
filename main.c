@@ -286,6 +286,8 @@ void parser(char *c) {
   // handle builtins here
   if (strcmp(c, "exit") == 0)
     exit(0);
+  if (strcmp(c, "q") == 0)
+    exit(0);
   if (iterator) {
     for (int i = 0; i < iterator; i++) {
       exec_command(arg_count, arg_vector);
