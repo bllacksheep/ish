@@ -7,17 +7,18 @@
 
 void parser(char *);
 char *get_command(char *);
-void ret_prompt();
+void repl();
 void exec_command(int, char **);
 void mystrcspn(char **c);
 
-void ret_prompt() {
+void repl() {
   char command[MAX + 1];
   printf("> ");
   fflush(stdout);
   parser(get_command(command));
 }
 
+// read in the input and remove any newline at the end of the command
 char *get_command(char *buf) {
   ssize_t n = read(STDIN_FILENO, buf, MAX);
   if (n == -1) {
@@ -30,6 +31,7 @@ char *get_command(char *buf) {
   return buf;
 }
 
+// len bruh
 int mylen(char **c) {
   int len = 0;
   while (c[len] != NULL)
@@ -37,6 +39,7 @@ int mylen(char **c) {
   return len;
 }
 
+// remove a newline by replace it with \0
 void mystrcspn(char **c) {
   int len = 0;
   while ((*c)[len] != '\n')
@@ -44,6 +47,8 @@ void mystrcspn(char **c) {
   (*c)[len] = '\0';
 }
 
+// parse out the number from the start of a command if exists
+// step the command pointer forward to pos arg 1 the actual command name
 void parse_iterator(char **buf, unsigned *iter) {
   if (buf == NULL && *buf == NULL && *iter != 0) {
     perror("parse iterator");
@@ -56,7 +61,6 @@ void parse_iterator(char **buf, unsigned *iter) {
   for (; *p != ' ' && *p != '\0'; capture[i++] = *p++)
     ;
 
-  // "10 ls" 0
   for (int j = 0; j < i; j++) {
     if (capture[j] == '0' || capture[j] == '1' || capture[j] == '2' ||
         capture[j] == '3' || capture[j] == '4' || capture[j] == '5' ||
@@ -76,6 +80,7 @@ void parse_iterator(char **buf, unsigned *iter) {
   */
 }
 
+// create official argc argv used with exec
 void parse_args(char *buf, char **argv, size_t *argn) {
   if (buf == NULL && argv == NULL && *argv == NULL) {
     perror("parse args");
@@ -97,6 +102,7 @@ void parse_args(char *buf, char **argv, size_t *argn) {
   *argn = argc;
 }
 
+// parser orchestroator pull together iterator + command + args
 void parser(char *c) {
   // real parsing logic on c goes here
   unsigned iterator = 0;
@@ -129,6 +135,7 @@ void parser(char *c) {
   return;
 }
 
+// fork exec
 void exec_command(int argc, char **argv) {
   pid_t pid;
   pid = fork();
@@ -151,7 +158,7 @@ void exec_command(int argc, char **argv) {
 int main(void) {
 
   while (1) {
-    ret_prompt();
+    repl();
   }
 
   return 0;
