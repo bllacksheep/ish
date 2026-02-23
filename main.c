@@ -148,16 +148,30 @@ void destroy_args(size_t argc, char **argv) {
   }
 }
 
+char *getval(char *k) {
+  char dummy[] = "1234";
+  char *p = malloc(strlen(dummy) + 1);
+  int i = 0;
+  while (dummy[i] != '\0')
+    p[i] = dummy[i];
+  p[i] = '\0';
+  return p;
+}
+
+// parse x=1 expressions adding variable creation and reference
 void parse_expr(size_t argc, char **argv) {
   char key[MAX + 1] = {0};
   char val[MAX + 1] = {0};
 
   enum {
     IDLE,
-    KEY,
-    VALUE,
+    CREATEKEY,
+    CREATEVALUE,
+    GETVALUE,
+    SETVALUE,
     ERROR,
     NEXT,
+    DONE,
   } state = IDLE;
 
   char *arg = NULL;
@@ -169,12 +183,30 @@ void parse_expr(size_t argc, char **argv) {
       if (isalpha(*arg)) {
         key[i] = *arg;
         arg++;
-        state = KEY;
+        state = CREATEKEY;
+        break;
+      }
+      if (*arg == '$') {
+        arg++;
+        key[i] = *arg;
+        state = GETVALUE;
         break;
       }
       state = ERROR;
       break;
-    case KEY:
+    case GETVALUE:
+      if (isalpha(*arg)) {
+        key[i] = *arg;
+        arg++;
+        break;
+      }
+      if (*arg == '\0') {
+        getval(key);
+        state = DONE;
+        break;
+      }
+      break;
+    case CREATEKEY:
       if (isalpha(*arg)) {
         key[i] = *arg;
         arg++;
@@ -185,14 +217,14 @@ void parse_expr(size_t argc, char **argv) {
         puts(key);
         // next increment will be to 0
         i = -1;
-        state = VALUE;
+        state = CREATEVALUE;
         // skip '='
         arg++;
         break;
       }
       state = ERROR;
       break;
-    case VALUE:
+    case CREATEVALUE:
       if (isalpha(*arg)) {
         val[i] = *arg;
         arg++;
@@ -207,7 +239,6 @@ void parse_expr(size_t argc, char **argv) {
       state = ERROR;
       break;
     case ERROR:
-      perror("error");
       return;
     case NEXT:
       i = -1;
@@ -216,6 +247,8 @@ void parse_expr(size_t argc, char **argv) {
       argv++;
       state = IDLE;
       break;
+    case DONE:
+      return;
     default:
       return;
       break;
