@@ -8,7 +8,7 @@
 
 typedef struct parse_state parse_state_t;
 void parser(char *);
-ssize_t read_command(char *);
+ssize_t read_input(char *);
 void repl();
 void exec_command(size_t, char **);
 void mystrcspn(char **c);
@@ -23,7 +23,7 @@ void repl() {
     perror("repl flush");
     exit(EXIT_FAILURE);
   };
-  switch (read_command(input)) {
+  switch (read_input(input)) {
   case 1:
     if (input[0] == '\n')
       break;
@@ -35,7 +35,7 @@ void repl() {
 }
 
 // read in the input and remove any newline at the end of the command
-ssize_t read_command(char *buf) {
+ssize_t read_input(char *buf) {
   if (buf == NULL) {
     perror("no buffer");
     exit(EXIT_FAILURE);
