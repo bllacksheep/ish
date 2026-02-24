@@ -18,7 +18,6 @@ typedef struct semantic_token {
 
 enum parser_matching {
   MATCH = 0,
-  NOMATCH,
 };
 
 typedef struct parse_state parse_state_t;
@@ -192,7 +191,7 @@ int is_expression(char *buf) {
       return MATCH;
     buf++;
   }
-  return NOMATCH;
+  return !MATCH;
 }
 
 // set the type of the member argv
