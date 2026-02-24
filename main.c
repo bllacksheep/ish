@@ -197,6 +197,10 @@ int is_expression(char *buf) {
 
 // set the type of the member argv
 void parser_set_type(char *buf, semantic_token_t *token) {
+  if (buf == NULL) {
+    perror("no buffer");
+    exit(NOBUFFER);
+  }
   if (is_expression(buf) == MATCH) {
     token->type = EXPRESSION;
   }
@@ -211,7 +215,7 @@ void parser_set_val(char *buf, semantic_token_t *token) {
 
 // create official argc argv used with exec
 void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
-  if (buf == NULL && tokenv == NULL && *tokenv == NULL) {
+  if (buf == NULL || tokenv == NULL) {
     perror("parse args");
     exit(EXIT_FAILURE);
   }
