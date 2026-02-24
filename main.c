@@ -221,20 +221,25 @@ void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
 
   char capture[MAX + 1] = {0};
   char *p = buf;
+  semantic_token_t *token = *tokenv;
   size_t argc = 0;
 
   while (*p != '\0') {
     for (size_t i = 0; *p != ' ' && *p != '\0'; p++) {
       capture[i++] = *p;
     }
-
-    parser_set_type(capture, *tokenv);
-    parser_set_val(capture, *tokenv);
-
+    // now that we have work bounded by ' ' or '\0' it's a token
+    if (token != NULL) {
+      parser_set_type(capture, token);
+      parser_set_val(capture, token);
+    }
     // skip space
     p++;
+    // next slot
+    token++;
     memset(capture, 0, sizeof(capture));
   }
+  // set the last arg to NULL required by execv family of functions
   tokenv[argc + 1] = NULL;
   *argn = argc;
 }
