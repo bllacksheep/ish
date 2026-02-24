@@ -40,6 +40,8 @@ void repl() {
 enum ERRORS {
   NOBYTES = 0,
   NOBUFFER,
+  ITERSTATE,
+  NOEXPR,
 };
 
 // read in the input and remove any newline at the end of the command
@@ -104,6 +106,10 @@ void has_iterator(parse_state_t s) {
     perror("no buffer to parse");
     exit(NOBUFFER);
   }
+  if (*s.iterator != 0) {
+    perror("iterator should always be 0 at start of parsing");
+    exit(ITERSTATE);
+  }
   kw = s.keyword;
   for (int j = 0; j < s.kwlen; j++) {
     if (kw[j] == '0' || kw[j] == '1' || kw[j] == '2' || kw[j] == '3' ||
@@ -119,9 +125,13 @@ void has_iterator(parse_state_t s) {
 // parse out the number from the start of a command if exists
 // step the command pointer forward to pos arg 1 the actual command name
 void parse_iterator(char **buf, size_t *iter) {
-  if (buf == NULL && *buf == NULL && *iter != 0) {
+  if (buf == NULL || *buf == NULL || iter == NULL) {
     perror("parse iterator");
-    exit(EXIT_FAILURE);
+    exit(NOBUFFER);
+  }
+  if (*iter != 0) {
+    perror("iterator should always be 0");
+    exit(ITERSTATE);
   }
 
   char capture[MAX + 1] = {0};
@@ -185,6 +195,10 @@ void destroy_args(size_t argc, char **argv) {
 char *getval(char *k) {
   char dummy[] = "1234";
   char *p = malloc(strlen(dummy) + 1);
+  if (p == NULL) {
+    perror("no buffer");
+    exit(NOBUFFER);
+  }
   int i = 0;
   while (dummy[i] != '\0') {
     p[i] = dummy[i];
@@ -196,6 +210,15 @@ char *getval(char *k) {
 
 // parse x=1 expressions adding variable creation and reference
 void parse_expr(size_t argc, char **argv) {
+  if (argv == NULL || *argv == NULL) {
+    perror("no expression buffer");
+    exit(NOBUFFER);
+  }
+  if (argc == 0) {
+    perror("no expressions to parse");
+    exit(NOEXPR);
+  }
+
   char key[MAX + 1] = {0};
   char val[MAX + 1] = {0};
 
