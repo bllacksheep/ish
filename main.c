@@ -6,14 +6,24 @@
 #include <unistd.h>
 #define MAX 100
 
+typedef enum token {
+  EXPRESSION,
+  COMMAND,
+} semantic_type_t;
+
+typedef struct semantic_token {
+  char *buf;
+  semantic_type_t type;
+} semantic_token_t;
+
 typedef struct parse_state parse_state_t;
 void parser(char *);
 ssize_t read_input(char *);
 void repl();
 void exec_command(size_t, char **);
 void mystrcspn(char **c);
-void destroy_args(size_t, char **);
-void parse_expr(size_t, char **);
+void destroy_args(size_t, semantic_token_t **);
+void parse_expr(size_t, semantic_token_t **);
 void has_iterator(parse_state_t);
 
 void repl() {
@@ -159,34 +169,58 @@ void parse_iterator(char **buf, size_t *iter) {
   fflush(stdout);
   */
 }
+void parser_set_type(char *buf, semantic_token_t *token);
+void parser_set_val(char *buf, semantic_token_t *token);
+int is_expression(char *buf);
+int is_command(char *buf);
+
+int is_expression(char *buf) {}
+int is_command(char *buf) {}
+
+void parser_set_type(char *buf, semantic_token_t *token) {
+  if (is_expression(buf) == 0) {
+    token->type = EXPRESSION;
+  }
+  if (is_command(buf) == 0) {
+    token->type = COMMAND;
+  }
+}
+void parser_set_val(char *buf, semantic_token_t *token) {
+  token->buf = strdup(buf);
+}
 
 // create official argc argv used with exec
-void parse_args(char *buf, char **argv, size_t *argn) {
-  if (buf == NULL && argv == NULL && *argv == NULL) {
+void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
+  if (buf == NULL && tokenv == NULL && *tokenv == NULL) {
     perror("parse args");
     exit(EXIT_FAILURE);
   }
+
   char capture[MAX + 1] = {0};
   char *p = buf;
   size_t argc = 0;
+
   while (*p != '\0') {
     for (size_t i = 0; *p != ' ' && *p != '\0'; p++) {
       capture[i++] = *p;
     }
-    argv[argc++] = strdup(capture);
+
+    parser_set_type(capture, argv);
+    parser_set_val(capture, argv);
+
     // skip space
     p++;
     memset(capture, 0, sizeof(capture));
   }
-  argv[argc + 1] = NULL;
+  tokenv[argc + 1] = NULL;
   *argn = argc;
 }
 
 // destroy args allocated with strdup
-void destroy_args(size_t argc, char **argv) {
+void destroy_args(size_t argc, semantic_token_t **argv) {
   for (int i = 0; i < argc; i++) {
     if (argv[i] != NULL)
-      free(argv[i]);
+      free(argv[i]->buf);
   }
 }
 
@@ -259,6 +293,8 @@ void parse_expr(size_t argc, char **argv) {
       }
       if (*arg == '\0') {
         puts(getval(key));
+        // replace $x with actual value in arg list
+        *argv = getval(key);
         state = DONE;
         break;
       }
@@ -278,6 +314,11 @@ void parse_expr(size_t argc, char **argv) {
         // skip '='
         arg++;
         break;
+      }
+      if (*arg == '$') {
+        // feel like I need to reset key here
+        arg++;
+        state = GETVALUE;
       }
       state = ERROR;
       break;
@@ -331,7 +372,7 @@ void parser(char *c) {
   size_t iterator = 0;
   size_t arg_count = 0;
   // soft max on num args per command
-  char *arg_vector[MAX] = {0};
+  semantic_token_t *arg_vector[MAX] = {0};
 
   parse_iterator(&c, &iterator);
   // by convention use cmd ... args ... NULL terminate in NULL
@@ -355,6 +396,7 @@ void parser(char *c) {
     destroy_args(arg_count, arg_vector);
     return;
   }
+  // iterator loop
   if (iterator > 0) {
     for (int i = 0; i < iterator; i++) {
       exec_command(arg_count, arg_vector);
