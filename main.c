@@ -39,23 +39,24 @@ void repl() {
 
 enum ERRORS {
   NOBYTES = 0,
+  NOBUFFER,
 };
 
 // read in the input and remove any newline at the end of the command
 ssize_t read_input(char *buf) {
   if (buf == NULL) {
-    perror("no buffer");
-    exit(EXIT_FAILURE);
+    perror("no input buffer");
+    exit(NOBUFFER);
   }
   ssize_t n = read(STDIN_FILENO, buf, MAX);
   if (n == -1) {
-    perror("get command");
+    perror("fail to read input");
     exit(EXIT_FAILURE);
   }
   if (n > 0)
     buf[n] = '\0';
   if (n == NOBYTES) {
-    perror("no bytes read");
+    perror("no bytes read from input");
     return NOBYTES;
   }
   // newline in input command must be removed or break
@@ -65,6 +66,10 @@ ssize_t read_input(char *buf) {
 
 // len bruh
 size_t mylen(char **c) {
+  if (c == NULL || *c == NULL) {
+    perror("no buffer to take len");
+    exit(NOBUFFER);
+  }
   size_t len = 0;
   while (c[len] != NULL)
     len++;
@@ -73,6 +78,10 @@ size_t mylen(char **c) {
 
 // remove a newline by replace it with \0
 void mystrcspn(char **c) {
+  if (c == NULL || *c == NULL) {
+    perror("no buffer to remove '\n'");
+    exit(NOBUFFER);
+  }
   size_t len = 0;
   while ((*c)[len] != '\n')
     len++;
@@ -89,7 +98,13 @@ typedef struct parse_state {
 } parse_state_t;
 
 void has_iterator(parse_state_t s) {
-  char *kw = s.keyword;
+  char *kw;
+  if (s.keyword == NULL || s.cmd_buffer == NULL || *s.cmd_buffer == NULL ||
+      s.curr_buf_pos == NULL || s.iterator == NULL) {
+    perror("no buffer to parse");
+    exit(NOBUFFER);
+  }
+  kw = s.keyword;
   for (int j = 0; j < s.kwlen; j++) {
     if (kw[j] == '0' || kw[j] == '1' || kw[j] == '2' || kw[j] == '3' ||
         kw[j] == '4' || kw[j] == '5' || kw[j] == '6' || kw[j] == '7' ||
