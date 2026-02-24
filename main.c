@@ -208,7 +208,7 @@ char *getval(char *k) {
   return p;
 }
 
-// parse x=1 expressions adding variable creation and reference
+// parse x=1;y=2 expressions adding variable creation and reference x=$y
 void parse_expr(size_t argc, char **argv) {
   if (argv == NULL || *argv == NULL) {
     perror("no expression buffer");
