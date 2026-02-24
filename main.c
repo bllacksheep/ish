@@ -40,7 +40,7 @@ void destroy_args(size_t, char **);
 void parse_expr(size_t, semantic_token_t **);
 void parse_tokens(char *, semantic_token_t **, size_t *);
 void has_iterator(parse_state_t);
-void parser_set_type(char *buf, semantic_token_t *token);
+void parser_set_type(semantic_token_t *token);
 void parser_set_val(char *buf, semantic_token_t *token);
 int is_expression(char *buf);
 int is_command(char *buf);
@@ -198,12 +198,12 @@ int is_expression(char *buf) {
 }
 
 // set the type of the member argv
-void parser_set_type(char *buf, semantic_token_t *token) {
-  if (buf == NULL) {
+void parser_set_type(semantic_token_t *token) {
+  if (token->buf == NULL) {
     perror("no buffer when setting type");
     exit(NOBUFFER);
   }
-  if (is_expression(buf) == MATCH) {
+  if (is_expression(token->buf) == MATCH) {
     token->type = EXPRESSION;
   }
   // assumed
@@ -237,8 +237,8 @@ void parse_tokens(char *buf, semantic_token_t **tokenv, size_t *argn) {
       perror("alloc token");
       exit(ALLOC);
     }
-    parser_set_type(capture, *token);
     parser_set_val(capture, *token);
+    parser_set_type(*token);
     argc++;
     // skip space
     p++;
@@ -289,8 +289,8 @@ char *getval(char *k) {
 }
 
 // parse x=1;y=2 expressions adding variable creation and reference x=$y
-void parse_expr(size_t argc, semantic_token_t **argv) {
-  if (argv == NULL || *argv == NULL) {
+void parse_expr(size_t argc, semantic_token_t **tokenv) {
+  if (tokenv == NULL || *tokenv == NULL) {
     perror("no expression buffer");
     exit(NOBUFFER);
   }
@@ -313,82 +313,82 @@ void parse_expr(size_t argc, semantic_token_t **argv) {
     DONE,
   } state = IDLE;
 
-  char *arg = NULL;
+  char *token = NULL;
 
-  for (int i = 0; *argv != NULL; i++) {
-    if ((*argv)->buf == NULL) {
+  for (int i = 0; *tokenv != NULL; i++) {
+    if ((*tokenv)->buf == NULL) {
       perror("no buffer when setting idle parser state");
       exit(NOBUFFER);
     }
     switch (state) {
     case IDLE:
-      arg = (*argv)->buf;
-      if (isalpha(*arg)) {
-        key[i] = *arg;
-        arg++;
+      token = (*tokenv)->buf;
+      if (isalpha(*token)) {
+        key[i] = *token;
+        token++;
         state = CREATEKEY;
         break;
       }
-      if (*arg == '$') {
-        arg++;
-        key[i] = *arg;
+      if (*token == '$') {
+        token++;
+        key[i] = *token;
         state = GETVALUE;
         break;
       }
       state = ERROR;
       break;
     case GETVALUE:
-      if (isalpha(*arg)) {
-        key[i] = *arg;
-        arg++;
+      if (isalpha(*token)) {
+        key[i] = *token;
+        token++;
         break;
       }
-      if (*arg == '\0') {
+      if (*token == '\0') {
         puts(getval(key));
-        // replace $x with actual value in arg list
-        (*argv)->buf = getval(key);
+        // replace $x with actual value in token list
+        (*tokenv)->buf = getval(key);
         state = DONE;
         break;
       }
       break;
     case CREATEKEY:
-      if (isalpha(*arg)) {
-        key[i] = *arg;
-        arg++;
+      if (isalpha(*token)) {
+        key[i] = *token;
+        token++;
         break;
       }
-      if (*arg == '=') {
+      if (*token == '=') {
         // add key to hash table
         puts(key);
         // next increment will be to 0
         i = -1;
         state = CREATEVALUE;
         // skip '='
-        arg++;
+        token++;
         break;
       }
-      if (*arg == '$') {
+      if (*token == '$') {
         // feel like I need to reset key here
-        arg++;
+        token++;
         state = GETVALUE;
       }
       state = ERROR;
       break;
     case CREATEVALUE:
-      if (isalpha(*arg)) {
-        val[i] = *arg;
-        arg++;
+      if (isalpha(*token)) {
+        val[i] = *token;
+        token++;
         break;
       }
-      if (*arg == '\0') {
+      if (*token == '\0') {
         // add value to hash table
         puts(val);
         state = NEXT;
         break;
       }
-      if (*arg == '$') {
-        arg++;
-        val[i] = *arg;
+      if (*token == '$') {
+        token++;
+        val[i] = *token;
         state = GETVALUE;
         break;
       }
@@ -400,7 +400,7 @@ void parse_expr(size_t argc, semantic_token_t **argv) {
       i = -1;
       memset(key, 0, sizeof(key));
       memset(val, 0, sizeof(val));
-      argv++;
+      tokenv++;
       state = IDLE;
       break;
     case DONE:
