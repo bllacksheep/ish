@@ -11,6 +11,14 @@ typedef enum token {
   COMMAND,
 } semantic_type_t;
 
+enum ERRORS {
+  NOBYTES = 0,
+  NOBUFFER,
+  ITERSTATE,
+  NOEXPR,
+  ALLOC,
+};
+
 typedef struct semantic_token {
   char *buf;
   semantic_type_t type;
@@ -29,6 +37,7 @@ void mystrcspn(char **c);
 void destroy_tokens(size_t, semantic_token_t **);
 void destroy_args(size_t, char **);
 void parse_expr(size_t, semantic_token_t **);
+void parse_tokens(char *, semantic_token_t **, size_t *);
 void has_iterator(parse_state_t);
 void parser_set_type(char *buf, semantic_token_t *token);
 void parser_set_val(char *buf, semantic_token_t *token);
@@ -56,13 +65,6 @@ void repl() {
     break;
   }
 }
-
-enum ERRORS {
-  NOBYTES = 0,
-  NOBUFFER,
-  ITERSTATE,
-  NOEXPR,
-};
 
 // read in the input and remove any newline at the end of the command
 ssize_t read_input(char *buf) {
@@ -182,7 +184,7 @@ void parse_iterator(char **buf, size_t *iter) {
 
 int is_expression(char *buf) {
   if (buf == NULL) {
-    perror("no buffer");
+    perror("no buffer in expression detection");
     exit(NOBUFFER);
   }
   // assume is at least an attempted expression
@@ -197,7 +199,7 @@ int is_expression(char *buf) {
 // set the type of the member argv
 void parser_set_type(char *buf, semantic_token_t *token) {
   if (buf == NULL) {
-    perror("no buffer");
+    perror("no buffer when setting type");
     exit(NOBUFFER);
   }
   if (is_expression(buf) == MATCH) {
@@ -213,7 +215,7 @@ void parser_set_val(char *buf, semantic_token_t *token) {
 }
 
 // create official argc argv used with exec
-void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
+void parse_tokens(char *buf, semantic_token_t **tokenv, size_t *argn) {
   if (buf == NULL || tokenv == NULL) {
     perror("parse args");
     exit(EXIT_FAILURE);
@@ -221,7 +223,7 @@ void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
 
   char capture[MAX + 1] = {0};
   char *p = buf;
-  semantic_token_t *token = *tokenv;
+  semantic_token_t **token = tokenv;
   size_t argc = 0;
 
   while (*p != '\0') {
@@ -229,10 +231,14 @@ void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
       capture[i++] = *p;
     }
     // now that we have work bounded by ' ' or '\0' it's a token
-    if (token != NULL) {
-      parser_set_type(capture, token);
-      parser_set_val(capture, token);
+    *token = calloc(1, sizeof(semantic_token_t));
+    if (*token == NULL) {
+      perror("alloc token");
+      exit(ALLOC);
     }
+    parser_set_type(capture, *token);
+    parser_set_val(capture, *token);
+    argc++;
     // skip space
     p++;
     // next slot
@@ -264,7 +270,7 @@ char *getval(char *k) {
   char dummy[] = "1234";
   char *p = malloc(strlen(dummy) + 1);
   if (p == NULL) {
-    perror("no buffer");
+    perror("no buffer when getting val");
     exit(NOBUFFER);
   }
   int i = 0;
@@ -305,7 +311,7 @@ void parse_expr(size_t argc, semantic_token_t **argv) {
 
   for (int i = 0; *argv != NULL; i++) {
     if ((*argv)->buf == NULL) {
-      perror("no buffer");
+      perror("no buffer when setting idle parser state");
       exit(NOBUFFER);
     }
     switch (state) {
@@ -408,13 +414,13 @@ void echo(size_t argc, char **argv) {
 
 void create_arg_vector(size_t argc, char **argv, semantic_token_t **tokenv) {
   if (argv == NULL || tokenv == NULL) {
-    perror("no buffer");
+    perror("no buffer when creating arg vector");
     exit(NOBUFFER);
   }
   for (int i = 0; i < argc; i++) {
     // will fail due to last item being NULL
     if (argv[i] == NULL || tokenv[i] == NULL || tokenv[i]->buf == NULL) {
-      perror("no buffer");
+      perror("no buffer when setting arg vector");
       exit(NOBUFFER);
     }
     // set pointer addresses of argv
@@ -436,9 +442,8 @@ void parser(char *c) {
   parse_iterator(&c, &iterator);
   // by convention use cmd ... args ... NULL terminate in NULL
   // return or set argc, command must end with NULL see execv
-  parse_args(c, token_vector, &arg_count);
+  parse_tokens(c, token_vector, &arg_count);
   parse_expr(arg_count, token_vector);
-
   /*
   printf("num args %zu\n", arg_count);
   printf("iterator %u\n", iterator);
