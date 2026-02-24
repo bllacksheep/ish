@@ -16,15 +16,26 @@ typedef struct semantic_token {
   semantic_type_t type;
 } semantic_token_t;
 
+enum parser_matching {
+  MATCH = 0,
+  NOMATCH,
+};
+
 typedef struct parse_state parse_state_t;
 void parser(char *);
 ssize_t read_input(char *);
 void repl();
 void exec_command(size_t, char **);
 void mystrcspn(char **c);
-void destroy_args(size_t, semantic_token_t **);
+void destroy_tokens(size_t, semantic_token_t **);
+void destroy_args(size_t, char **);
 void parse_expr(size_t, semantic_token_t **);
 void has_iterator(parse_state_t);
+void parser_set_type(char *buf, semantic_token_t *token);
+void parser_set_val(char *buf, semantic_token_t *token);
+int is_expression(char *buf);
+int is_command(char *buf);
+void create_arg_vector(size_t, char **, semantic_token_t **);
 
 void repl() {
   char input[MAX + 1] = {0};
@@ -169,10 +180,6 @@ void parse_iterator(char **buf, size_t *iter) {
   fflush(stdout);
   */
 }
-void parser_set_type(char *buf, semantic_token_t *token);
-void parser_set_val(char *buf, semantic_token_t *token);
-int is_expression(char *buf);
-int is_command(char *buf);
 
 int is_expression(char *buf) {
   if (buf == NULL) {
@@ -182,15 +189,15 @@ int is_expression(char *buf) {
   // assume is at least an attempted expression
   while (*buf != '\0') {
     if (*buf == '$')
-      return 1;
+      return MATCH;
     buf++;
   }
-  return 0;
+  return NOMATCH;
 }
 
 // set the type of the member argv
 void parser_set_type(char *buf, semantic_token_t *token) {
-  if (is_expression(buf) == 0) {
+  if (is_expression(buf) == MATCH) {
     token->type = EXPRESSION;
   }
   // assumed
@@ -230,10 +237,18 @@ void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
 }
 
 // destroy args allocated with strdup
-void destroy_args(size_t argc, semantic_token_t **argv) {
+void destroy_tokens(size_t argc, semantic_token_t **argv) {
   for (int i = 0; i < argc; i++) {
     if (argv[i] != NULL)
       free(argv[i]->buf);
+  }
+}
+
+// destroy args allocated with strdup
+void destroy_args(size_t argc, char **argv) {
+  for (int i = 0; i < argc; i++) {
+    if (argv[i] != NULL)
+      free(argv[i]);
   }
 }
 
@@ -311,7 +326,7 @@ void parse_expr(size_t argc, semantic_token_t **argv) {
       if (*arg == '\0') {
         puts(getval(key));
         // replace $x with actual value in arg list
-        *argv = getval(key);
+        (*argv)->buf = getval(key);
         state = DONE;
         break;
       }
@@ -383,33 +398,55 @@ void echo(size_t argc, char **argv) {
   putchar('\n');
 }
 
+void create_arg_vector(size_t argc, char **argv, semantic_token_t **tokenv) {
+  if (argv == NULL || tokenv == NULL) {
+    perror("no buffer");
+    exit(NOBUFFER);
+  }
+  for (int i = 0; i < argc; i++) {
+    // will fail due to last item being NULL
+    if (argv[i] == NULL || tokenv[i] == NULL || tokenv[i]->buf == NULL) {
+      perror("no buffer");
+      exit(NOBUFFER);
+    }
+    // set pointer addresses of argv
+    argv[i] = tokenv[i]->buf;
+  }
+}
+
 // parser orchestroator pull together iterator + command + args
 void parser(char *c) {
   // real parsing logic on c goes here
   size_t iterator = 0;
   size_t arg_count = 0;
   // soft max on num args per command
-  semantic_token_t *arg_vector[MAX] = {0};
+  // used to derived argument types
+  semantic_token_t *token_vector[MAX] = {0};
+  // passed to exec command once references are resolved
+  char *arg_vector[MAX] = {0};
 
   parse_iterator(&c, &iterator);
   // by convention use cmd ... args ... NULL terminate in NULL
   // return or set argc, command must end with NULL see execv
-  parse_args(c, arg_vector, &arg_count);
-  parse_expr(arg_count, arg_vector);
+  parse_args(c, token_vector, &arg_count);
+  parse_expr(arg_count, token_vector);
+
   /*
   printf("num args %zu\n", arg_count);
   printf("iterator %u\n", iterator);
   fflush(stdout);
   */
+  create_arg_vector(arg_count, arg_vector, token_vector);
 
   // handle builtins here
-  if (strcmp(c, "exit") == 0)
+  if (strcmp(arg_vector[0], "exit") == MATCH)
     exit(0);
-  if (strcmp(c, "q") == 0)
+  if (strcmp(arg_vector[0], "q") == MATCH)
     exit(0);
-  if (strcmp(arg_vector[0], "echo") == 0)
+  if (strcmp(arg_vector[0], "echo") == MATCH)
     echo(arg_count, arg_vector);
   if (iterator == 0) {
+    destroy_tokens(arg_count, token_vector);
     destroy_args(arg_count, arg_vector);
     return;
   }
@@ -419,10 +456,12 @@ void parser(char *c) {
       exec_command(arg_count, arg_vector);
     }
     destroy_args(arg_count, arg_vector);
+    destroy_tokens(arg_count, token_vector);
     return;
   }
   exec_command(arg_count, arg_vector);
   destroy_args(arg_count, arg_vector);
+  destroy_tokens(arg_count, token_vector);
   return;
 }
 
