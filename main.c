@@ -28,11 +28,18 @@ void repl() {
     if (input[0] == '\n')
       break;
     break;
+  case 0:
+    return;
+    break;
   default:
     parser(input);
     break;
   }
 }
+
+enum ERRORS {
+  NOBYTES = 0,
+};
 
 // read in the input and remove any newline at the end of the command
 ssize_t read_input(char *buf) {
@@ -47,6 +54,10 @@ ssize_t read_input(char *buf) {
   }
   if (n > 0)
     buf[n] = '\0';
+  if (n == NOBYTES) {
+    perror("no bytes read");
+    return NOBYTES;
+  }
   // newline in input command must be removed or break
   mystrcspn(&buf);
   return n;
