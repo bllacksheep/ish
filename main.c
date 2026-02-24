@@ -93,7 +93,6 @@ void mystrcspn(char **c) {
 typedef struct parse_state {
   char *keyword;
   char **cmd_buffer;
-  char *curr_buf_pos;
   size_t *iterator;
   size_t kwlen;
   size_t scale;
@@ -102,7 +101,7 @@ typedef struct parse_state {
 void has_iterator(parse_state_t s) {
   char *kw;
   if (s.keyword == NULL || s.cmd_buffer == NULL || *s.cmd_buffer == NULL ||
-      s.curr_buf_pos == NULL || s.iterator == NULL) {
+      s.iterator == NULL) {
     perror("no buffer to parse");
     exit(NOBUFFER);
   }
@@ -144,7 +143,6 @@ void parse_iterator(char **buf, size_t *iter) {
   parse_state_t state = {
       .keyword = capture,
       .cmd_buffer = buf,
-      .curr_buf_pos = p,
       .iterator = iter,
       .kwlen = i,
       .scale = s,
