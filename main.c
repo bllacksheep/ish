@@ -17,19 +17,19 @@ void parse_expr(size_t, char **);
 void has_iterator(parse_state_t);
 
 void repl() {
-  char command[MAX + 1] = {0};
+  char input[MAX + 1] = {0};
   printf("> ");
   if (fflush(stdout) == EOF) {
     perror("repl flush");
     exit(EXIT_FAILURE);
   };
-  switch (read_command(command)) {
+  switch (read_command(input)) {
   case 1:
-    if (command[0] == '\n')
+    if (input[0] == '\n')
       break;
     break;
   default:
-    parser(command);
+    parser(input);
     break;
   }
 }
