@@ -19,7 +19,10 @@ void has_iterator(parse_state_t);
 void repl() {
   char command[MAX + 1] = {0};
   printf("> ");
-  fflush(stdout);
+  if (fflush(stdout) == EOF) {
+    perror("repl flush");
+    exit(EXIT_FAILURE);
+  };
   switch (read_command(command)) {
   case 1:
     if (command[0] == '\n')
@@ -33,12 +36,17 @@ void repl() {
 
 // read in the input and remove any newline at the end of the command
 ssize_t read_command(char *buf) {
+  if (buf == NULL) {
+    perror("no buffer");
+    exit(EXIT_FAILURE);
+  }
   ssize_t n = read(STDIN_FILENO, buf, MAX);
   if (n == -1) {
     perror("get command");
     exit(EXIT_FAILURE);
   }
-  buf[n] = '\0';
+  if (n > 0)
+    buf[n] = '\0';
   // newline in input command must be removed or break
   mystrcspn(&buf);
   return n;
