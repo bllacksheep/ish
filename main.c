@@ -17,6 +17,7 @@ enum ERRORS {
   ITERSTATE,
   NOEXPR,
   ALLOC,
+  BUFFERINUSE,
 };
 
 typedef struct semantic_token {
@@ -251,10 +252,15 @@ void parse_tokens(char *buf, semantic_token_t **tokenv, size_t *argn) {
 }
 
 // destroy args allocated with strdup
-void destroy_tokens(size_t argc, semantic_token_t **argv) {
-  for (int i = 0; i < argc; i++) {
-    if (argv[i] != NULL)
-      free(argv[i]->buf);
+void destroy_tokens(size_t tokenc, semantic_token_t **tokenv) {
+  for (int i = 0; i < tokenc; i++) {
+    if (tokenv[i] != NULL) {
+      if (tokenv[i]->buf != NULL)
+        // allocated by strdup at parse time
+        free(tokenv[i]->buf);
+      // allocated at arg initialization
+      free(tokenv[i]);
+    }
   }
 }
 
@@ -419,8 +425,13 @@ void create_arg_vector(size_t argc, char **argv, semantic_token_t **tokenv) {
   }
   for (int i = 0; i < argc; i++) {
     // will fail due to last item being NULL
-    if (argv[i] == NULL || tokenv[i] == NULL || tokenv[i]->buf == NULL) {
-      perror("no buffer when setting arg vector");
+    if (argv[i] != NULL) {
+      perror("arg vector pos should be empty");
+      exit(BUFFERINUSE);
+    }
+
+    if (tokenv[i] == NULL || tokenv[i]->buf == NULL) {
+      perror("no token or token value buffer when setting arg vector");
       exit(NOBUFFER);
     }
     // set pointer addresses of argv
@@ -456,24 +467,23 @@ void parser(char *c) {
     exit(0);
   if (strcmp(arg_vector[0], "q") == MATCH)
     exit(0);
-  if (strcmp(arg_vector[0], "echo") == MATCH)
-    echo(arg_count, arg_vector);
   if (iterator == 0) {
     destroy_tokens(arg_count, token_vector);
-    destroy_args(arg_count, arg_vector);
     return;
   }
   // iterator loop
   if (iterator > 0) {
     for (int i = 0; i < iterator; i++) {
-      exec_command(arg_count, arg_vector);
+      if (strcmp(arg_vector[0], "echo") == MATCH) {
+        echo(arg_count, arg_vector);
+      } else {
+        exec_command(arg_count, arg_vector);
+      }
     }
-    destroy_args(arg_count, arg_vector);
     destroy_tokens(arg_count, token_vector);
     return;
   }
   exec_command(arg_count, arg_vector);
-  destroy_args(arg_count, arg_vector);
   destroy_tokens(arg_count, token_vector);
   return;
 }
