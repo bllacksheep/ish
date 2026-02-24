@@ -319,6 +319,12 @@ void parse_expr(size_t argc, char **argv) {
   }
 }
 
+void echo(size_t argc, char **argv) {
+  for (int i = 1; i < argc; i++)
+    printf("%s ", argv[i]);
+  putchar('\n');
+}
+
 // parser orchestroator pull together iterator + command + args
 void parser(char *c) {
   // real parsing logic on c goes here
@@ -343,6 +349,8 @@ void parser(char *c) {
     exit(0);
   if (strcmp(c, "q") == 0)
     exit(0);
+  if (strcmp(arg_vector[0], "echo") == 0)
+    echo(arg_count, arg_vector);
   if (iterator == 0) {
     destroy_args(arg_count, arg_vector);
     return;
