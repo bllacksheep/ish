@@ -174,17 +174,30 @@ void parser_set_val(char *buf, semantic_token_t *token);
 int is_expression(char *buf);
 int is_command(char *buf);
 
-int is_expression(char *buf) {}
-int is_command(char *buf) {}
+int is_expression(char *buf) {
+  if (buf == NULL) {
+    perror("no buffer");
+    exit(NOBUFFER);
+  }
+  // assume is at least an attempted expression
+  while (*buf != '\0') {
+    if (*buf == '$')
+      return 1;
+    buf++;
+  }
+  return 0;
+}
 
+// set the type of the member argv
 void parser_set_type(char *buf, semantic_token_t *token) {
   if (is_expression(buf) == 0) {
     token->type = EXPRESSION;
   }
-  if (is_command(buf) == 0) {
-    token->type = COMMAND;
-  }
+  // assumed
+  token->type = COMMAND;
 }
+
+// set the val of the member argv
 void parser_set_val(char *buf, semantic_token_t *token) {
   token->buf = strdup(buf);
 }
@@ -205,8 +218,8 @@ void parse_args(char *buf, semantic_token_t **tokenv, size_t *argn) {
       capture[i++] = *p;
     }
 
-    parser_set_type(capture, argv);
-    parser_set_val(capture, argv);
+    parser_set_type(capture, *tokenv);
+    parser_set_val(capture, *tokenv);
 
     // skip space
     p++;
@@ -241,7 +254,7 @@ char *getval(char *k) {
 }
 
 // parse x=1;y=2 expressions adding variable creation and reference x=$y
-void parse_expr(size_t argc, char **argv) {
+void parse_expr(size_t argc, semantic_token_t **argv) {
   if (argv == NULL || *argv == NULL) {
     perror("no expression buffer");
     exit(NOBUFFER);
@@ -268,9 +281,13 @@ void parse_expr(size_t argc, char **argv) {
   char *arg = NULL;
 
   for (int i = 0; *argv != NULL; i++) {
+    if ((*argv)->buf == NULL) {
+      perror("no buffer");
+      exit(NOBUFFER);
+    }
     switch (state) {
     case IDLE:
-      arg = *argv;
+      arg = (*argv)->buf;
       if (isalpha(*arg)) {
         key[i] = *arg;
         arg++;
