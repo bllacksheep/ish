@@ -343,7 +343,11 @@ void parser(char *c) {
     exit(0);
   if (strcmp(c, "q") == 0)
     exit(0);
-  if (iterator) {
+  if (iterator == 0) {
+    destroy_args(arg_count, arg_vector);
+    return;
+  }
+  if (iterator > 0) {
     for (int i = 0; i < iterator; i++) {
       exec_command(arg_count, arg_vector);
     }
