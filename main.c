@@ -467,23 +467,15 @@ void parser(char *c) {
     exit(0);
   if (strcmp(arg_vector[0], "q") == MATCH)
     exit(0);
-  if (iterator == 0) {
-    destroy_tokens(arg_count, token_vector);
-    return;
-  }
+
   // iterator loop
-  if (iterator > 0) {
-    for (int i = 0; i < iterator; i++) {
-      if (strcmp(arg_vector[0], "echo") == MATCH) {
-        echo(arg_count, arg_vector);
-      } else {
-        exec_command(arg_count, arg_vector);
-      }
+  for (int i = 0; i < (iterator == 0 ? 1 : iterator); i++) {
+    if (strcmp(arg_vector[0], "echo") == MATCH) {
+      echo(arg_count, arg_vector);
+    } else {
+      exec_command(arg_count, arg_vector);
     }
-    destroy_tokens(arg_count, token_vector);
-    return;
   }
-  exec_command(arg_count, arg_vector);
   destroy_tokens(arg_count, token_vector);
   return;
 }
