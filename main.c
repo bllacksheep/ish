@@ -268,6 +268,7 @@ void destroy_tokens(size_t tokenc, semantic_token_t **tokenv) {
   }
 }
 
+// not used right now
 // destroy args allocated with strdup
 void destroy_args(size_t argc, char **argv) {
   for (int i = 0; i < argc; i++) {
@@ -457,6 +458,8 @@ void parser(char *c) {
   printf("iterator %u\n", iterator);
   fflush(stdout);
   */
+
+  // needed?
   create_arg_vector(arg_count, arg_vector, token_vector);
 
   // handle builtins here
