@@ -44,7 +44,7 @@ typedef struct parse_state {
 } parse_state_t;
 
 typedef struct parse_state parse_state_t;
-void parser(char *);
+void simple_parser(char *);
 ssize_t read_input(char *);
 void repl();
 void exec_command(int, size_t, char **);
@@ -91,7 +91,7 @@ void repl() {
     return;
     break;
   default:
-    parser(input);
+    simple_parser(input);
     break;
   }
 }
@@ -481,7 +481,7 @@ void tokenv_to_argv(size_t argc, char **argv, semantic_token_t **tokenv) {
 }
 
 // parser orchestroator pull together iterator + command + args
-void parser(char *c) {
+void simple_parser(char *c) {
   // real parsing logic on c goes here
   size_t iterator = 0;
   size_t arg_count = 0;
