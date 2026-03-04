@@ -528,6 +528,9 @@ void exec_command(int type, size_t argc, char **argv) {
   pid_t pid;
   pid = fork();
 
+  // need state machine here for evaluating cmd
+  // expressions first from token list
+  // command or builtin last
   switch (pid) {
   case -1:
     perror("fork");
