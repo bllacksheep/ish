@@ -143,6 +143,9 @@ void mystrcspn(char **c) {
   (*c)[len] = '\0';
 }
 
+// takes state but discards it, embedded in the state is a pointer "iter"
+// which when set, propagates back to the caller, even though
+// the rest of the data is destroyed on the stack frame
 void has_iterator(parse_state_t s) {
   char *kw;
   if (s.keyword == NULL || s.cmd_buffer == NULL || *s.cmd_buffer == NULL ||
@@ -198,11 +201,6 @@ void parse_iterator(char **buf, size_t *iter) {
   // skip space if present
   if ((*buf)[0] == ' ')
     (*buf)++;
-  /*
-  printf("the capture %s\n", capture);
-  printf("iter is %u\n", *iter);
-  fflush(stdout);
-  */
 }
 
 int is_expression(char *buf) {
@@ -531,7 +529,6 @@ void simple_parser(char *c) {
       break;
     }
     exec_command(COMMAND, arg_count, arg_vector);
-    break;
   }
   destroy_tokens(arg_count, token_vector);
   return;
