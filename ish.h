@@ -9,7 +9,7 @@ typedef struct builtin builtin_t;
 typedef struct parse_state parse_state_t;
 
 typedef struct parse_state {
-  char *keyword;
+  const char *capture;
   const char **buf;
   size_t *iterator;
   const size_t kwlen;
