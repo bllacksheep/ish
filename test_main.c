@@ -33,11 +33,12 @@ void test_has_iterator_should_parse_out_iterators_and_advance_buf(void) {
   const int expected[CASES] = {0, 0, 1, 7, 10, 100, 432};
 
   // "7 <mycommand> split in caller
+  // are these strings pre-processed to remove a char?
   const char *cases[CASES][2] = {
-      {"<mycommand>", "<mycommand>"}, {"0", " <mycommand>"},
-      {"1", " <mycommand>"},          {"7", " <mycommand>"},
-      {"10", " <mycommand>"},         {"100", " <mycommand>"},
-      {"432", " <mycommand>"},
+      {"<mycommand>", "<mycommand>"}, {"0", "0 <mycommand>"},
+      {"1", "1 <mycommand>"},         {"7", "7 <mycommand>"},
+      {"10", "10 <mycommand>"},       {"100", "100 <mycommand>"},
+      {"432", "432 <mycommand>"},
   };
 
   for (int i = 0; i < CASES; i++) {
@@ -50,11 +51,8 @@ void test_has_iterator_should_parse_out_iterators_and_advance_buf(void) {
                            .buf = &buf,
                            .kwlen = strnlen(cap, 20),
                            .iterator = &iterator};
-
     has_iterator(state);
-
     TEST_ASSERT_EQUAL_UINT(expected[i], iterator);
-    puts(buf);
     TEST_ASSERT_EQUAL_STRING("<mycommand>", buf);
   }
 }
