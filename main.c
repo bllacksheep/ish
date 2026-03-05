@@ -144,12 +144,12 @@ void has_iterator(const parse_state_t s) {
   const char *it = s.capture;
   // convert each string '1' and '0' in "10" to decimal 10
   for (int j = 0; j < s.kwlen; j++) {
-    if (it[j] == '0' || it[j] == '1' || it[j] == '2' || it[j] == '3' ||
-        it[j] == '4' || it[j] == '5' || it[j] == '6' || it[j] == '7' ||
-        it[j] == '8' || it[j] == '9') {
+    if (it[j] >= '0' && it[j] <= '9') {
       *s.iterator = *s.iterator * 10 + (it[j] - '0');
       // walk command buffer past the iterator if exists
       (*s.buf)++;
+    } else {
+      break;
     }
   }
 }
