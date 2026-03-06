@@ -7,11 +7,4 @@ const char *ht_get_var(const char *);
 int ht_put_var(const char *, const char *);
 int ht_del_var(const char *);
 
-enum ht_errors {
-  ERRHTINIT = 100,
-  ERRHTGET,
-  ERRHTINS,
-  ERRHTDEL,
-};
-
 #endif

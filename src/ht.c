@@ -5,6 +5,16 @@
 
 #define HT_MAX_KEY_LEN 20
 
+enum ht_errors {
+  ERRHTINIT = 100,
+  ERRHTGET,
+  ERRHTINS,
+  ERRHTDEL,
+  ERRHTNOKEYLEN,
+  ERRHTNOTABLE,
+  ERRHTNOBUF,
+};
+
 typedef struct ht_item {
   char *key;
   char *value;
@@ -17,6 +27,7 @@ static ht_table_t *init(void);
 static ht_table_t *get_table(void);
 static ht_item_t *lookup_item(const ht_table_t *, const char *, const size_t);
 static unsigned get_hash(const char *, const size_t, const unsigned);
+size_t get_key_len(const char *);
 
 static unsigned get_hash(const char *k, const size_t kl, const unsigned at) {
   return 0;
@@ -25,6 +36,22 @@ static unsigned get_hash(const char *k, const size_t kl, const unsigned at) {
 // take table, key and key length and return value
 static ht_item_t *lookup_item(const ht_table_t *tbl, const char *item_key,
                               const size_t item_key_len) {
+
+  if (tbl == NULL) {
+    fprintf(stderr, "i.sh: ht no table, code: %d", ERRHTNOTABLE);
+    exit(ERRHTNOTABLE);
+  }
+
+  if (item_key == NULL) {
+    fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
+    exit(ERRHTNOBUF);
+  }
+
+  if (item_key_len == 0) {
+    fprintf(stderr, "i.sh: ht len 0, code: %d", ERRHTNOKEYLEN);
+    exit(ERRHTNOKEYLEN);
+  }
+
   unsigned attempt = 0;
   unsigned try = get_hash(item_key, item_key_len, attempt);
 
@@ -57,6 +84,7 @@ static ht_table_t *table_init(void) {
   return ht_table;
 }
 
+// return a table init if not exists
 static ht_table_t *table_get(void) {
   if (ht_table == NULL) {
     return table_init();
@@ -66,19 +94,18 @@ static ht_table_t *table_get(void) {
 
 // caller must check is val NULL
 const char *ht_get_var(const char *item_k) {
+  if (item_k == NULL) {
+    fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
+    exit(ERRHTNOBUF);
+  }
+
   ht_table_t *table = table_get();
   if (table == NULL) {
     fprintf(stderr, "i.sh: failed to get ht table, code: %d", ERRHTGET);
     exit(ERRHTGET);
   }
-  const size_t item_kl = strnlen(item_k, HT_MAX_KEY_LEN);
 
-  if (item_kl == 0) {
-    fprintf(stderr, "i.sh: failed to initialize key %s, code: %d", item_k,
-            ERRHTINS);
-    return EXIT_FAILURE;
-  }
-
+  size_t item_kl = get_key_len(item_k);
   ht_item_t *item = lookup_item(table, item_k, item_kl);
   if (item != NULL) {
     return item->value;
@@ -86,20 +113,35 @@ const char *ht_get_var(const char *item_k) {
   return NULL;
 }
 
+size_t get_key_len(const char *k) {
+  if (k == NULL) {
+    fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
+    exit(ERRHTNOBUF);
+  }
+
+  const size_t item_kl = strnlen(k, HT_MAX_KEY_LEN);
+
+  if (item_kl == 0) {
+    fprintf(stderr, "i.sh: failed to initialize key %s, code: %d", k, ERRHTINS);
+    return EXIT_FAILURE;
+  }
+  return item_kl;
+}
+
 int ht_put_var(const char *item_k, const char *item_v) {
+
+  if (item_k == NULL || item_v == NULL) {
+    fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
+    exit(ERRHTNOBUF);
+  }
+
   ht_table_t *table = table_get();
   if (table == NULL) {
     fprintf(stderr, "i.sh: failed to get ht table, code: %d", ERRHTGET);
     exit(ERRHTGET);
   }
-  const size_t item_kl = strnlen(item_k, HT_MAX_KEY_LEN);
 
-  if (item_kl == 0) {
-    fprintf(stderr, "i.sh: failed to initialize key %s, code: %d", item_k,
-            ERRHTINS);
-    return EXIT_FAILURE;
-  }
-
+  size_t item_kl = get_key_len(item_k);
   ht_item_t *item = lookup_item(table, item_k, item_kl);
 
   if (item != NULL) {
@@ -120,6 +162,7 @@ int ht_put_var(const char *item_k, const char *item_v) {
   return EXIT_SUCCESS;
 }
 
+// unset in shell, remove an item by freeing it's k,v and setting to NULL
 int ht_del_var(const char *item_k) {
   ht_table_t *table = table_get();
   if (table == NULL) {
