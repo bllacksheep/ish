@@ -15,10 +15,6 @@ enum ERRORS {
   ERRBUFFERINUSE,
 };
 
-enum parser_matching {
-  MATCH = 0,
-};
-
 typedef struct builtin {
   int (*builtin)(size_t, void *[]);
   char *name;
@@ -185,7 +181,7 @@ int is_expression(char *buf) {
   }
   // assume is at least an attempted expression
   while (*buf != '\0') {
-    if (*buf == '$')
+    if (*buf == '$' || *buf == '=')
       return MATCH;
     buf++;
   }
