@@ -31,7 +31,7 @@ static ht_item_t *item_lookup(const ht_table_t *, const char *, const size_t);
 static unsigned item_hash(const char *, const size_t, const unsigned);
 size_t key_get_len(const char *);
 
-static unsigned get_hash(const char *k, const size_t kl, const unsigned at) {
+static unsigned item_hash(const char *k, const size_t kl, const unsigned at) {
   return 0;
 }
 
