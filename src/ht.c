@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define HT_MAX 1000
 #define HT_MAX_KEY_LEN 20
 
 enum ht_errors {
