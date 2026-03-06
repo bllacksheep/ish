@@ -30,7 +30,7 @@ void test_has_iterator_should_parse_out_iterators_and_advance_buf(void) {
   // this is done in the caller so provided here as separate
 
 #define SHOULD_ADVANCE_BUFFER_CASES 6
-  const int expected[SHOULD_ADVANCE_BUFFER_CASES] = {0, 1, 7, 10, 100, 432};
+  const size_t expected[SHOULD_ADVANCE_BUFFER_CASES] = {0, 1, 7, 10, 100, 432};
 
   // "7 <mycommand> split in caller
   const char *cases[SHOULD_ADVANCE_BUFFER_CASES][2] = {
@@ -57,11 +57,8 @@ void test_has_iterator_should_parse_out_iterators_and_advance_buf(void) {
 
 // walk the buffer past the iterator if present and convert iterator to decimal
 void test_has_iterator_should_ignore_buffer(void) {
-  // a "capture" is the potential iterator, captured as first word before ' '
-  // this is done in the caller so provided here as separate
-
 #define SHOULD_IGNORE_BUFFER_CASES 1
-  const int expected[SHOULD_IGNORE_BUFFER_CASES] = {0};
+  const size_t expected[SHOULD_IGNORE_BUFFER_CASES] = {0};
 
   // "7 <mycommand> split in caller
   const char *cases[SHOULD_IGNORE_BUFFER_CASES][2] = {
