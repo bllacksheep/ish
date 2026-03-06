@@ -13,6 +13,7 @@ enum ht_errors {
   ERRHTNOKEYLEN,
   ERRHTNOTABLE,
   ERRHTNOBUF,
+  ERRHTNOITEM,
 };
 
 typedef struct ht_item {
@@ -56,6 +57,11 @@ static ht_item_t *lookup_item(const ht_table_t *tbl, const char *item_key,
   unsigned try = get_hash(item_key, item_key_len, attempt);
 
   ht_item_t *item = (ht_item_t *)&tbl[try];
+
+  if (item == NULL) {
+    fprintf(stderr, "i.sh: ht no item at index, code: %d", ERRHTNOITEM);
+    exit(ERRHTNOITEM);
+  }
 
   while (1) {
     if (attempt == HT_MAX)
