@@ -1,5 +1,6 @@
 #include "ish.h"
 #include "unity/src/unity.h"
+#include <stdlib.h>
 #include <string.h>
 
 void setUp(void) {}
@@ -23,6 +24,48 @@ void tokenv_to_argv(size_t, char **, semantic_token_t **);
 int echo(size_t, void **);
 int fexit(size_t, void **);
 */
+
+// token buf should always be unset, before being set
+void test_parser_set_token_val_should_set_val_even_if_already_set(void) {
+
+  char *expected = "1234";
+  semantic_token_t token = {0};
+
+#define SHOULD_VERIFY_SET_AND_RESET 2
+  for (int i = 0; i < SHOULD_VERIFY_SET_AND_RESET; i++) {
+    parser_set_token_val(expected, &token);
+    TEST_ASSERT_EQUAL_STRING(expected, token.buf);
+    expected = "12345";
+  }
+  free(token.buf);
+}
+
+void test_parser_set_token_type_should_set_type_based_on_input(void) {
+
+  struct results {
+    char *input;
+    semantic_type_t expected;
+  };
+
+#define SHOULD_VERIFY_TYPES 5
+  struct results cases[SHOULD_VERIFY_TYPES] = {
+      {"ls", COMMAND},     {"echo", BUILTIN},    {"$x", EXPRESSION},
+      {"x=1", EXPRESSION}, {"x=$y", EXPRESSION},
+  };
+
+  semantic_token_t token = {0};
+
+  for (int i = 0; i < SHOULD_VERIFY_TYPES; i++) {
+    char *buf = cases[i].input;
+    semantic_type_t expected = cases[i].expected;
+
+    parser_set_token_val(buf, &token);
+    parser_set_token_type(&token);
+
+    TEST_ASSERT_EQUAL_UINT(expected, token.type);
+  }
+  free(token.buf);
+}
 
 // walk the buffer past the iterator if present and convert iterator to decimal
 void test_has_iterator_should_parse_out_iterators_and_advance_buf(void) {
@@ -86,6 +129,8 @@ int main(void) {
 
   RUN_TEST(test_has_iterator_should_parse_out_iterators_and_advance_buf);
   RUN_TEST(test_has_iterator_should_ignore_buffer);
+  RUN_TEST(test_parser_set_token_val_should_set_val_even_if_already_set);
+  RUN_TEST(test_parser_set_token_type_should_set_type_based_on_input);
 
   return UNITY_END();
 }

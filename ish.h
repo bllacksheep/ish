@@ -15,6 +15,17 @@ typedef struct parse_state {
   const size_t kwlen;
 } parse_state_t;
 
+typedef enum token {
+  EXPRESSION,
+  COMMAND,
+  BUILTIN,
+} semantic_type_t;
+
+typedef struct semantic_token {
+  char *buf;
+  semantic_type_t type;
+} semantic_token_t;
+
 void simple_parser(const char *);
 ssize_t read_input(char *);
 void repl();

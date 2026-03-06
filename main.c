@@ -6,12 +6,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-typedef enum token {
-  EXPRESSION,
-  COMMAND,
-  BUILTIN,
-} semantic_type_t;
-
 enum ERRORS {
   ERRNOBYTES = 1,
   ERRNOBUFFER,
@@ -20,11 +14,6 @@ enum ERRORS {
   ERRALLOC,
   ERRBUFFERINUSE,
 };
-
-typedef struct semantic_token {
-  char *buf;
-  semantic_type_t type;
-} semantic_token_t;
 
 enum parser_matching {
   MATCH = 0,
