@@ -13,11 +13,13 @@ typedef struct ht_item {
 
 typedef ht_item_t ht_table_t[HT_MAX];
 
-ht_table_t *ht_init(void);
+static ht_table_t *ht_init(void);
 ht_table_t *ht_get_table(void);
 int ht_get_var(char *);
 int ht_put_var(char *, char *);
 int ht_del_var(char *);
+static int ht_set_key(ht_item_t *, char *);
+static int ht_set_val(ht_item_t *, char *);
 
 enum ht_errors {
   ERRHTINIT = 100,
@@ -28,7 +30,7 @@ enum ht_errors {
 
 static ht_table_t *ht_table = NULL;
 
-ht_table_t *ht_init() {
+static ht_table_t *ht_init() {
   if (ht_table != NULL) {
     return ht_table;
   }
@@ -56,22 +58,35 @@ int ht_get_var(char *k) {
   return EXIT_SUCCESS;
 }
 
-int ht_set_key(ht_item_t *item, char *v) {
+static int ht_set_val(ht_item_t *item, char *v) {
   if (item == NULL || v == NULL) {
-    fprintf(stderr, "i.sh: failed to set key, code: %d", ERRHTINS);
+    fprintf(stderr, "i.sh: failed to set value %s, code: %d", v, ERRHTINS);
     return EXIT_FAILURE;
   }
 
-  if (item->key == NULL || item->value == NULL) {
-    fprintf(stderr, "i.sh: failed to set key, code: %d", ERRHTINS);
-    return EXIT_FAILURE;
-  }
-
+  // if not null, and the same value, overwrite, else .... something else
   item->value = strdup(v);
   if (item->value == NULL) {
-    fprintf(stderr, "i.sh: failed to initialize key, code: %d", ERRHTINS);
+    fprintf(stderr, "i.sh: failed to initialize value %s, code: %d", v,
+            ERRHTINS);
     return EXIT_FAILURE;
   }
+  return EXIT_SUCCESS;
+}
+
+static int ht_set_key(ht_item_t *item, char *k) {
+  if (item == NULL || k == NULL) {
+    fprintf(stderr, "i.sh: failed to set key %s, code: %d", k, ERRHTINS);
+    return EXIT_FAILURE;
+  }
+
+  // if not null, and the same value, overwrite, else .... something else
+  item->key = strdup(k);
+  if (item->key == NULL) {
+    fprintf(stderr, "i.sh: failed to initialize key %s, code: %d", k, ERRHTINS);
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
 }
 
