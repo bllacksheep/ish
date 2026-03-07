@@ -29,7 +29,7 @@ static ht_table_t *table_init(void);
 static ht_table_t *table_get(void);
 static ht_item_t *item_lookup(const ht_table_t *, const char *, const size_t);
 static unsigned item_hash(const char *, const size_t, const unsigned);
-size_t key_get_len(const char *);
+static size_t key_get_len(const char *);
 
 static unsigned item_hash(const char *k, const size_t kl, const unsigned at) {
   return 0;
@@ -71,7 +71,7 @@ static ht_item_t *item_lookup(const ht_table_t *tbl, const char *item_key,
       return item;
     attempt++;
     // retry step by 1
-    try = get_hash(item_key, item_key_len, attempt);
+    try = item_hash(item_key, item_key_len, attempt);
     item = (ht_item_t *)&tbl[try];
   }
   return NULL;
@@ -119,7 +119,7 @@ const char *ht_get_var(const char *item_k) {
   return NULL;
 }
 
-size_t get_key_len(const char *k) {
+static size_t get_key_len(const char *k) {
   if (k == NULL) {
     fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
     exit(ERRHTNOBUF);
