@@ -1,29 +1,30 @@
-TESTS := $(wildcard test_*.c)
 PATHBD := build
 PATHBN := bin
 PATHUN := unity/src
+PATHSC := src
 PATHRT := build/results
-UNITY := $(PATHUN)/unity.c
-RUNNER := runner
-CFLAGS := -I$(PATHUN) -ggdb3 -O0
+CFLAGS := -I$(PATHUN) -I$(PATHSC) -ggdb3 -O0
 CC := gcc
 EXE := i.sh
 PATHS := $(PATHBD) $(PATHBN) $(PATHRT)
+
+TESTS := $(wildcard tests/test_*.c)
+RUNNERS := $(patsubst tests/%.c,$(PATHBN)/%,$(TESTS))
 
 .PHONY: setup all clean check
 
 all: $(PATHBN)/$(EXE)
 
-check: $(PATHBN)/$(RUNNER)
-	./$(PATHBN)/$(RUNNER)
+check: $(RUNNERS)
+	@for runner in $(RUNNERS); do ./$$runner; done
 
-$(PATHBN)/$(EXE): main.c ish.h
+$(PATHBN)/$(EXE): src/main.c src/ish.h
 	@mkdir -p $(PATHBN)
 	$(CC) $(CFLAGS) $< -o $@
 
-$(PATHBN)/$(RUNNER): main.c $(TESTS) $(UNITY)
+$(PATHBN)/test_%: tests/test_%.c $(PATHUN)/unity.c
 	@mkdir -p $(PATHBN)
-	$(CC) $(CFLAGS) -DTEST $^ -o $@
+	$(CC) $(CFLAGS) -DTEST src/$(subst test_,,$(notdir $@)).c $^ -o $@
 
 setup:
 	mkdir -p $(PATHS)
