@@ -6,6 +6,12 @@
 #define HT_MAX 1000
 #define HT_MAX_KEY_LEN 20
 
+#ifdef TEST
+#define STATIC
+#else
+#define STATIC static
+#endif
+
 enum ht_errors {
   ERRHTINIT = 100,
   ERRHTGET,
@@ -23,20 +29,20 @@ typedef struct ht_item {
 } ht_item_t;
 
 typedef ht_item_t ht_table_t[HT_MAX];
-static ht_table_t *ht_table = NULL;
+STATIC ht_table_t *ht_table = NULL;
 
-static ht_table_t *table_init(void);
-static ht_table_t *table_get(void);
-static ht_item_t *item_lookup(const ht_table_t *, const char *, const size_t);
-static unsigned item_hash(const char *, const size_t, const unsigned);
-static size_t key_get_len(const char *);
+STATIC ht_table_t *table_init(void);
+STATIC ht_table_t *table_get(void);
+STATIC ht_item_t *item_lookup(const ht_table_t *, const char *, const size_t);
+STATIC unsigned item_hash(const char *, const size_t, const unsigned);
+STATIC size_t key_get_len(const char *);
 
-static unsigned item_hash(const char *k, const size_t kl, const unsigned at) {
+STATIC unsigned item_hash(const char *k, const size_t kl, const unsigned at) {
   return 0;
 }
 
 // take table, key and key length and return value
-static ht_item_t *item_lookup(const ht_table_t *tbl, const char *item_key,
+STATIC ht_item_t *item_lookup(const ht_table_t *tbl, const char *item_key,
                               const size_t item_key_len) {
 
   if (tbl == NULL) {
@@ -79,7 +85,7 @@ static ht_item_t *item_lookup(const ht_table_t *tbl, const char *item_key,
 
 // initialize a table if not already initialized and return pointer to first
 // elem
-static ht_table_t *table_init(void) {
+STATIC ht_table_t *table_init(void) {
   if (ht_table != NULL) {
     return ht_table;
   }
@@ -92,7 +98,7 @@ static ht_table_t *table_init(void) {
 }
 
 // return a table init if not exists
-static ht_table_t *table_get(void) {
+STATIC ht_table_t *table_get(void) {
   if (ht_table == NULL)
     return table_init();
   return ht_table;
@@ -119,7 +125,7 @@ const char *ht_get_var(const char *item_k) {
   return NULL;
 }
 
-static size_t key_get_len(const char *k) {
+STATIC size_t key_get_len(const char *k) {
   if (k == NULL) {
     fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
     exit(ERRHTNOBUF);

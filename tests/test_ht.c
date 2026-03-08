@@ -1,4 +1,3 @@
-#include "ht.c"
 #include "unity.h"
 
 void setUp(void) {}
