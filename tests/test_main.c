@@ -1,5 +1,5 @@
 #include "ish.h"
-#include "unity/src/unity.h"
+#include "unity.h"
 #include <stdlib.h>
 #include <string.h>
 

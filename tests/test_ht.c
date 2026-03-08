@@ -1,5 +1,8 @@
-#include "../src/ht.c"
-#include "../unity/src/unity.h"
+#include "ht.c"
+#include "unity.h"
+
+void setUp(void) {}
+void tearDown(void) {}
 
 void test_ht_table_get_should_return_an_ht_table(void) {}
 void test_ht_item_lookup_should_return_an_ht_item(void) {}
