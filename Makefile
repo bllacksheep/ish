@@ -32,6 +32,7 @@ $(PATHBN)/$(EXE): $(OBJ)
 	$(CC) $(CFLAGS) $^ -o $@
 
 build/%.o: $(PATHSC)/%.c
+	@mkdir -p $(PATHBD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 setup:
