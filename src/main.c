@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 enum ERRORS {
-  ERRNOBYTES = 1,
+  ERRNOBYTES = 200,
   ERRNOBUFFER,
   ERRITERSTATE,
   ERRNOEXPR,
@@ -17,25 +17,29 @@ enum ERRORS {
 
 builtin_t builtins[MAX] = {
     {echo, "echo"},
-    {fexit, "exit"},
-    {fexit, "q"},
+    {free_exit, "exit"},
+    {free_exit, "q"},
 };
 
 builtin_t *get_builtins(void) { return builtins; }
 
 // free and exit
-int fexit(size_t argc, void **argv) {
+int free_exit(size_t argc, void **argv) {
   destroy_tokens(argc, (semantic_token_t **)argv);
   exit(EXIT_SUCCESS);
   return 0;
+}
+
+int err_exit(char *msg, unsigned err) {
+  fprintf(stderr, "i.sh: %s: code %d\n", msg, err);
+  exit(err);
 }
 
 void repl() {
   char input[MAX + 1] = {0};
   printf("> ");
   if (fflush(stdout) == EOF) {
-    fprintf(stderr, "i.sh: repl flush code: %d\n", EXIT_FAILURE);
-    exit(EXIT_FAILURE);
+    err_exit("repl flush", EXIT_FAILURE);
   };
   switch (read_input(input)) {
   case 1:
@@ -55,13 +59,11 @@ void repl() {
 // read in the input and remove any newline at the end of the command
 ssize_t read_input(char *buf) {
   if (buf == NULL) {
-    fprintf(stderr, "i.sh: no input buffer: %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no input buffer", ERRNOBUFFER);
   }
   ssize_t n = read(STDIN_FILENO, buf, MAX);
   if (n == -1) {
-    fprintf(stderr, "i.sh: failed to read input, code: %d\n", EXIT_FAILURE);
-    exit(EXIT_FAILURE);
+    err_exit("failed to read input", EXIT_FAILURE);
   }
   if (n > 0)
     buf[n] = '\0';
@@ -78,8 +80,7 @@ ssize_t read_input(char *buf) {
 // len bruh
 size_t mylen(char **c) {
   if (c == NULL || *c == NULL) {
-    fprintf(stderr, "i.sh: no buffer to take len, code: %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer to take len", ERRNOBUFFER);
   }
   size_t len = 0;
   while (c[len] != NULL)
@@ -90,8 +91,7 @@ size_t mylen(char **c) {
 // remove a newline by replace it with \0
 void mystrcspn(char **c) {
   if (c == NULL || *c == NULL) {
-    fprintf(stderr, "i.sh: no buffer to remove, code: %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer to remove new line", ERRNOBUFFER);
   }
   size_t len = 0;
   while ((*c)[len] != '\n')
@@ -105,22 +105,15 @@ void mystrcspn(char **c) {
 void has_iterator(const parse_state_t s) {
   // the capture is the potential iterator, captured in the caller
   if (s.capture == NULL || s.buf == NULL || *s.buf == NULL) {
-    fprintf(stderr, "i.sh: no buffer to parse, code: %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer to parse", ERRNOBUFFER);
   }
 
   if (s.iterator == NULL) {
-    fprintf(stderr, "i.sh: iterator should not be NULL, code: %d\n",
-            ERRITERSTATE);
-    exit(ERRITERSTATE);
+    err_exit("iterator should not be NULL", ERRITERSTATE);
   }
 
   if (*s.iterator != 0) {
-    fprintf(stderr,
-            "i.sh: iterator value should always be 0 at start of parsing, "
-            "code: %d\n",
-            ERRITERSTATE);
-    exit(ERRITERSTATE);
+    err_exit("iterator should be 0 at the start of parsing", ERRITERSTATE);
   }
 
   const char *it = s.capture;
@@ -140,13 +133,10 @@ void has_iterator(const parse_state_t s) {
 // step the command pointer forward to pos arg 1 the actual command name
 void parse_iterator(const char **buf, size_t *iter) {
   if (buf == NULL || *buf == NULL) {
-    fprintf(stderr, "i.sh: parse iterator, code: %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("parse iterator", ERRNOBUFFER);
   }
   if (iter == NULL || *iter != 0) {
-    fprintf(stderr, "i.sh: iterator should always be 0, code: %d\n",
-            ERRITERSTATE);
-    exit(ERRITERSTATE);
+    err_exit("iterator should always be 0", ERRITERSTATE);
   }
 
   char capture[MAX + 1] = {0};
@@ -173,8 +163,7 @@ void parse_iterator(const char **buf, size_t *iter) {
 
 int is_expression(char *buf) {
   if (buf == NULL) {
-    fprintf(stderr, "i.sh: no buffer in expression, code %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer in expression", ERRNOBUFFER);
   }
   // assume is at least an attempted expression
   while (*buf != '\0') {
@@ -187,8 +176,7 @@ int is_expression(char *buf) {
 
 int is_builtin(char *buf) {
   if (buf == NULL) {
-    fprintf(stderr, "i.sh: no buffer in builtin, code %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer in builtin", ERRNOBUFFER);
   }
   builtin_t *b = get_builtins();
   for (int i = 0; i < MAX && b[i].name != NULL; i++) {
@@ -201,9 +189,7 @@ int is_builtin(char *buf) {
 // set the type of the member argv
 void parser_set_token_type(semantic_token_t *token) {
   if (token->buf == NULL) {
-    fprintf(stderr, "i.sh: no buffer when setting type, code %d\n",
-            ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer when settting type", ERRNOBUFFER);
   }
   if (is_expression(token->buf) == MATCH) {
     token->type = EXPRESSION;
@@ -227,8 +213,7 @@ void parser_set_token_val(char *buf, semantic_token_t *token) {
 // create official argc argv used with exec
 void parser_tokenize(const char *buf, semantic_token_t **tokenv, size_t *argn) {
   if (buf == NULL || tokenv == NULL) {
-    fprintf(stderr, "i.sh: parse args, code: %d\n", EXIT_FAILURE);
-    exit(EXIT_FAILURE);
+    err_exit("parse args", EXIT_FAILURE);
   }
 
   semantic_token_t **token_vec = tokenv;
@@ -246,8 +231,7 @@ void parser_tokenize(const char *buf, semantic_token_t **tokenv, size_t *argn) {
 
     *token_vec = calloc(1, sizeof(semantic_token_t));
     if (*token_vec == NULL) {
-      fprintf(stderr, "i.sh: alloc token, code: %d\n", ERRALLOC);
-      exit(ERRALLOC);
+      err_exit("alloc token", ERRALLOC);
     }
     parser_set_token_val(capture, *token_vec);
     parser_set_token_type(*token_vec);
@@ -289,9 +273,7 @@ void destroy_args(size_t argc, char **argv) {
 char *getval(char *k) {
   char *p = strdup("1234");
   if (p == NULL) {
-    fprintf(stderr, "i.sh: no buffer when getting val, code: %d\n",
-            ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer when getting val", ERRNOBUFFER);
   }
   return p;
 }
@@ -299,12 +281,10 @@ char *getval(char *k) {
 // parse x=1;y=2 expressions adding variable creation and reference x=$y
 void parse_expr(size_t argc, semantic_token_t **tokenv) {
   if (tokenv == NULL || *tokenv == NULL) {
-    fprintf(stderr, "i.sh: no expression buffer, code: %d\n", ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no expression buffer", ERRNOBUFFER);
   }
   if (argc == 0) {
-    fprintf(stderr, "i.sh: no expression to parse, code: %d\n", ERRNOEXPR);
-    exit(ERRNOEXPR);
+    err_exit("no expression to parse", ERRNOEXPR);
   }
 
   char key[MAX + 1] = {0};
@@ -326,10 +306,7 @@ void parse_expr(size_t argc, semantic_token_t **tokenv) {
 
   for (int i = 0; *token_vec != NULL; i++) {
     if ((*token_vec)->buf == NULL) {
-      fprintf(stderr,
-              "i.sh: no buffer when setting idle parse state, code: %d\n",
-              ERRNOBUFFER);
-      exit(ERRNOBUFFER);
+      err_exit("no buffer when seting idle parse state", ERRNOBUFFER);
     }
 
     // walk tokens - resolve expression, skip the rest
@@ -444,24 +421,16 @@ int echo(size_t argc, void **argv) {
 
 void tokenv_to_argv(size_t argc, char **argv, semantic_token_t **tokenv) {
   if (argv == NULL || tokenv == NULL) {
-    fprintf(stderr, "i.sh: no buffer when creating arg vector, code: %d\n",
-            ERRNOBUFFER);
-    exit(ERRNOBUFFER);
+    err_exit("no buffer when creating arg vector", ERRNOBUFFER);
   }
   for (int i = 0; i < argc; i++) {
     // will fail due to last item being NULL
     if (argv[i] != NULL) {
-      fprintf(stderr, "i.sh: arg vector pos should be empty, code: %d\n",
-              ERRBUFFERINUSE);
-      exit(ERRBUFFERINUSE);
+      err_exit("arg vector pos should be empty", ERRBUFFERINUSE);
     }
 
     if (tokenv[i] == NULL || tokenv[i]->buf == NULL) {
-      fprintf(stderr,
-              "i.sh: no token or token value buffer when setting arg vector, "
-              "code: %d\n",
-              ERRNOBUFFER);
-      exit(ERRNOBUFFER);
+      err_exit("no token buffer when setting arg vector", ERRNOBUFFER);
     }
     // set pointer addresses of argv
     argv[i] = tokenv[i]->buf;
@@ -493,9 +462,9 @@ void simple_parser(const char *buf) {
 
   // handle builtins here
   if (strcmp(arg_vector[0], "exit") == MATCH)
-    fexit(arg_count, (void **)token_vector);
+    free_exit(arg_count, (void **)token_vector);
   if (strcmp(arg_vector[0], "q") == MATCH)
-    fexit(arg_count, (void **)token_vector);
+    free_exit(arg_count, (void **)token_vector);
 
   // iterator loop
   for (int i = 0; i < (iterator == 0 ? 1 : iterator); i++) {
@@ -522,8 +491,7 @@ void exec_command(int type, size_t argc, char **argv) {
   // command or builtin last
   switch (pid) {
   case -1:
-    fprintf(stderr, "i.sh: fork, code: %d\n", EXIT_FAILURE);
-    exit(EXIT_FAILURE);
+    err_exit("fork", EXIT_FAILURE);
     break;
   case 0:
     switch (type) {
