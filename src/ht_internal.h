@@ -26,8 +26,11 @@ typedef struct ht_item {
 } ht_item_t;
 
 typedef ht_item_t ht_table_t[HT_MAX];
+
+#ifdef TEST
 // so the test file can find it
 extern ht_table_t *ht_table;
+#endif
 
 STATIC ht_table_t *table_init(void);
 STATIC ht_table_t *table_get(void);

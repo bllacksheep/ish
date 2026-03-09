@@ -11,7 +11,6 @@ void tearDown(void) {
 }
 
 /*
-STATIC ht_table_t *table_init(void);
 STATIC ht_item_t *item_lookup(const ht_table_t *, const char *, const size_t);
 STATIC unsigned item_hash(const char *, const size_t, const unsigned);
 STATIC size_t key_get_len(const char *);
@@ -31,6 +30,7 @@ void test_ht_table_init_should_init_a_table_if_not_exist() {
   TEST_ASSERT_EQUAL_MEMORY(expected, actual, sizeof(ht_table_t));
 
   free(expected);
+  // actual is freed in teardown
 }
 
 void test_ht_table_get_should_return_an_ht_table(void) {
@@ -43,6 +43,7 @@ void test_ht_table_get_should_return_an_ht_table(void) {
   TEST_ASSERT_EQUAL_MEMORY(expected, actual, sizeof(ht_table_t));
 
   free(expected);
+  // actual is freed in teardown
 }
 
 void test_ht_item_lookup_should_return_an_ht_item(void) {}
