@@ -94,19 +94,28 @@ const char *ht_get_var(const char *item_k) {
   return NULL;
 }
 
+// take safe len of key k
 STATIC size_t key_get_len(const char *k) {
   if (k == NULL) {
     fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
     exit(ERRHTNOBUF);
   }
 
-  const size_t item_kl = strnlen(k, HT_MAX_KEY_LEN);
+  const size_t kl_safe = strnlen(k, HT_MAX_KEY_LEN);
+  const size_t kl_unsafe = strnlen(k, 100);
 
-  if (item_kl == 0) {
+  if (kl_unsafe > kl_safe) {
+    fprintf(stderr,
+            "i.sh: key provided is longer than max %d chars long, code: %d",
+            HT_MAX_KEY_LEN, ERRHTINS);
+    return EXIT_FAILURE;
+  }
+
+  if (kl_safe == 0) {
     fprintf(stderr, "i.sh: failed to initialize key %s, code: %d", k, ERRHTINS);
     return EXIT_FAILURE;
   }
-  return item_kl;
+  return kl_safe;
 }
 
 int ht_put_var(const char *item_k, const char *item_v) {
