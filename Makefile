@@ -7,9 +7,11 @@ CC := gcc
 EXE := i.sh
 PATHS := $(PATHBD) $(PATHBN)
 
+# build runner names
 TESTS := $(wildcard tests/test_*.c)
 RUNNERS := $(patsubst tests/%.c,$(PATHBN)/%,$(TESTS))
 
+# build obj names
 SRCS := $(wildcard $(PATHSC)/*.c)
 OBJ := $(patsubst $(PATHSC)/%.c,$(PATHBD)/%.o,$(SRCS))
 
