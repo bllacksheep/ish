@@ -1,3 +1,4 @@
+#include "ht.h"
 #include "ish.h"
 #include <ctype.h>
 #include <stdio.h>
@@ -19,6 +20,7 @@ builtin_t builtins[MAX] = {
     {echo, "echo"},
     {free_exit, "exit"},
     {free_exit, "q"},
+    {unset, "unset"},
 };
 
 builtin_t *get_builtins(void) { return builtins; }
@@ -29,6 +31,8 @@ int free_exit(size_t argc, void **argv) {
   exit(EXIT_SUCCESS);
   return 0;
 }
+
+int unset(size_t argc, void **argv) { return ht_del_var(argv[1]); }
 
 int err_exit(char *msg, unsigned err) {
   fprintf(stderr, "i.sh: %s: code %d\n", msg, err);
@@ -344,7 +348,7 @@ void parse_expr(size_t argc, semantic_token_t **tokenv) {
         // currently set to input buffer now being resolved to value
         if ((*token_vec)->buf != NULL)
           free((*token_vec)->buf);
-        (*token_vec)->buf = getval(key);
+        (*token_vec)->buf = (char *)ht_get_var(key);
         state = DONE;
         break;
       }
@@ -380,7 +384,7 @@ void parse_expr(size_t argc, semantic_token_t **tokenv) {
       if (*curr_token_pos == '\0') {
         // retain shell session variable state here
         // add value to hash table
-        // insert(key, val);
+        ht_put_var(key, val);
         state = NEXT;
         break;
       }
@@ -465,6 +469,11 @@ void simple_parser(const char *buf) {
     free_exit(arg_count, (void **)token_vector);
   if (strcmp(arg_vector[0], "q") == MATCH)
     free_exit(arg_count, (void **)token_vector);
+
+  /*
+  if (strcmp(arg_vector[0], "unset") == MATCH)
+    exec_command(BUILTIN, arg_count, arg_vector);
+  */
 
   // iterator loop
   for (int i = 0; i < (iterator == 0 ? 1 : iterator); i++) {

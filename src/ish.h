@@ -53,7 +53,9 @@ int is_expression(char *);
 int is_command(char *);
 int is_builtin(char *);
 void tokenv_to_argv(size_t, char **, semantic_token_t **);
+// builtins
 int echo(size_t, void **);
 int free_exit(size_t, void **);
 int err_exit(char *, unsigned);
+int unset(size_t, void **);
 #endif
