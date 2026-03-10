@@ -5,7 +5,7 @@
 #include <string.h>
 
 static char HT_TOMBSTONE_SENTINEL = 0;
-#define HT_TOMBSTONE &(HT_TOMBSTONE_SENTINEL)
+static void *const HT_TOMBSTONE = &HT_TOMBSTONE_SENTINEL;
 
 STATIC ht_table_t *ht_table = NULL;
 
