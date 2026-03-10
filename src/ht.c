@@ -6,8 +6,26 @@
 
 STATIC ht_table_t *ht_table = NULL;
 
-STATIC unsigned item_hash(const char *k, const size_t kl, const unsigned at) {
-  return 0;
+// E n-1 s[i]**n-1-i
+// i = 0
+// hash = hash * prime + char
+// exactly equal to above
+// return a hash of a key of len len based on given prime
+STATIC long long unsigned hash(const char *key, const size_t len,
+                               const unsigned prime) {
+  unsigned long long hash = 0;
+  for (size_t i = 0; i < len; i++) {
+    hash += (hash * prime) + key[i];
+  }
+  return hash % prime;
+}
+
+// uint64_t is down cast to unint32_t since table size is only 100
+STATIC unsigned item_hash(const char *item_key, const size_t item_key_len,
+                          const unsigned attempt) {
+  const unsigned long long hash_a = hash(item_key, item_key_len, HT_PRIME_1);
+  const unsigned long long hash_b = hash(item_key, item_key_len, HT_PRIME_2);
+  return (hash_a + (attempt * (hash_b + 1))) % HT_MAX;
 }
 
 // take table, key and key length and return value
