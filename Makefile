@@ -21,7 +21,7 @@ all: $(PATHBN)/$(EXE)
 
 check: CFLAGS += -DTEST
 check:
-	# clean dependnecies
+	# clean dependnecies - may change this technically means file timestamps are void
 	$(MAKE) clean
 	# must pass flags into $(MAKE) as starts new process
 	$(MAKE) $(RUNNERS) CFLAGS="$(CFLAGS)"
