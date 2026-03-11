@@ -19,13 +19,15 @@ OBJ := $(patsubst $(PATHSC)/%.c,$(PATHBD)/%.o,$(SRCS))
 
 all: $(PATHBN)/$(EXE)
 
+check: CFLAGS += -DTEST
+
 check: $(RUNNERS)
 	@for runner in $(RUNNERS); do ./$$runner; done
 
 # test_x -> x.c + test_x.c unity.c
-$(PATHBN)/test_%: tests/test_%.c $(PATHUN)/unity.c
+$(PATHBN)/test_%: tests/test_%.c $(PATHUN)/unity.c $(OBJ)
 	@mkdir -p $(PATHBN)
-	$(CC) $(CFLAGS) -DTEST $(PATHSC)/$(subst test_,,$(notdir $@)).c $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@
 
 $(PATHBN)/$(EXE): $(OBJ)
 	@mkdir -p $(PATHBN)
