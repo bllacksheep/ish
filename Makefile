@@ -21,11 +21,14 @@ all: $(PATHBN)/$(EXE)
 
 check: CFLAGS += -DTEST
 check:
+	# clean dependnecies
 	$(MAKE) clean
+	# must pass flags into $(MAKE) as starts new process
 	$(MAKE) $(RUNNERS) CFLAGS="$(CFLAGS)"
 	@for runner in $(RUNNERS); do ./$$runner; done
 
 # test_x -> x.c + test_x.c unity.c
+# uses obj file depdnency to build clean from scratch
 $(PATHBN)/test_%: tests/test_%.c $(PATHUN)/unity.c $(OBJ)
 	@mkdir -p $(PATHBN)
 	$(CC) $(CFLAGS) $^ -o $@
