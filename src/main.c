@@ -446,7 +446,7 @@ int echo(size_t argc, void **argv) {
   return 0;
 }
 
-void shell_parser_build_argv_from_tokens(size_t *argc, char **argv,
+void shell_parser_promote_tokens_to_argv(size_t *argc, char **argv,
                                          semantic_token_t **tokenv) {
   if (*argc == 0) {
     err_exit("no token count when creating arg vector", ERRNOTOKENCOUNT);
@@ -478,6 +478,7 @@ void shell_parser_build_argv_from_tokens(size_t *argc, char **argv,
       }
     }
   }
+  // decrement argc if tokens were pruned
   *argc = cmdc;
 }
 
@@ -486,28 +487,16 @@ typedef int (*handler_t)(size_t, void **);
 
 void run(handler_t callback, size_t iterator, size_t argc, void **argv);
 
-void command_handler(size_t argc, semantic_token_t **tokenv) {
+void shell_execution_pipeline(size_t argc, semantic_token_t **tokenv) {
   char *argv[MAX] = {0};
-  // decrement argc if tokens are pruned here
-  shell_parser_build_argv_from_tokens(&argc, argv, tokenv);
-  /*
-
-  this is what you want, if x isn't a command, then just fail
-  if x is, pass 2 as arg i.e.
-
-  exec(x 2)
-  exec(ls $x) here x is "mydir" would work
-
+  shell_parser_promote_tokens_to_argv(&argc, argv, tokenv);
   // handle builtins here
+  /*
   if (strcmp(argv[0], "exit") == MATCH)
     return free_exit;
   if (strcmp(argv[0], "q") == MATCH)
     return free_exit;
-  // free_exit(argc, (void **)tokenv);
 
-  */
-
-  /*
   if (strcmp(arg_vector[0], "unset") == MATCH)
     exec_command(BUILTIN, arg_count, arg_vector);
   */
@@ -536,14 +525,13 @@ void shell_simple_parser(const char *buf) {
   shell_parser_create_tokens(input, tvec, &tc);
   shell_parser_evaluate_expressions(tc, tvec);
 
-  command_handler(tc, tvec);
+  shell_execution_pipeline(tc, tvec);
 
   // shell_destroy_tokens(tc, tvec);
   return;
 }
 
-// fork exec
-void exec_command(int type, size_t argc, char **argv) {
+void shell_exection_handler(int type, size_t argc, char **argv) {
   pid_t pid;
   pid = fork();
 

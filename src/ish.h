@@ -36,10 +36,11 @@ typedef struct builtin {
 } builtin_t;
 
 void shell_simple_parser(const char *);
+void shell_execution_pipeline(size_t, semantic_token_t **);
 builtin_t *get_builtins(void);
 ssize_t read_input(char *);
 void repl();
-void exec_command(int, size_t, char **);
+void shell_execution_handler(int, size_t, char **);
 void mystrcspn(char **);
 void shell_destroy_tokens(size_t, semantic_token_t **);
 void destroy_args(size_t, char **);
@@ -52,7 +53,7 @@ void shell_parser_set_token_val(char *, semantic_token_t *);
 int is_expression(char *);
 int is_command(char *);
 int is_builtin(char *);
-void shell_parser_build_argv_from_tokens(size_t *, char **,
+void shell_parser_promote_tokens_to_argv(size_t *, char **,
                                          semantic_token_t **);
 // builtins
 int echo(size_t, void **);
