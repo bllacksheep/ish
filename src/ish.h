@@ -52,7 +52,7 @@ void shell_parser_set_token_val(char *, semantic_token_t *);
 int is_expression(char *);
 int is_command(char *);
 int is_builtin(char *);
-void shell_arser_build_argv_from_tokens(size_t, char **, semantic_token_t **);
+void shell_arser_build_argv_from_tokens(size_t *, char **, semantic_token_t **);
 // builtins
 int echo(size_t, void **);
 int free_exit(size_t, void **);

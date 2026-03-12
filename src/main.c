@@ -15,6 +15,7 @@ enum ERRORS {
   ERRALLOC,
   ERRBUFFERINUSE,
   ERRNOTOKEN,
+  ERRNOTOKENCOUNT,
 };
 
 builtin_t builtins[MAX] = {
@@ -244,13 +245,14 @@ void shell_parser_create_tokens(const char *buf, semantic_token_t **tokenv,
 
     shell_parser_set_token_val(capture, *token_vec);
     shell_parser_set_token_type(*token_vec);
-    // count arg
+
+    // count as arg
     argc++;
     // next token
     token_vec++;
-    // skip space
     if (*p == ';' || *p == ' ') {
       p++;
+      // look ahead for next space
       if (*p + 1 == ' ')
         p++;
     }
@@ -444,8 +446,11 @@ int echo(size_t argc, void **argv) {
   return 0;
 }
 
-void shell_parser_build_argv_from_tokens(size_t argc, char **argv,
+void shell_parser_build_argv_from_tokens(size_t *argc, char **argv,
                                          semantic_token_t **tokenv) {
+  if (*argc == 0) {
+    err_exit("no token count when creating arg vector", ERRNOTOKENCOUNT);
+  }
   if (argv == NULL) {
     err_exit("no buffer when creating arg vector", ERRNOBUFFER);
   }
@@ -453,7 +458,11 @@ void shell_parser_build_argv_from_tokens(size_t argc, char **argv,
     err_exit("no tokens when creating arg vector", ERRNOTOKEN);
   }
 
-  for (int i = 0; i < argc; i++) {
+  // if command expression command expression passed in, argc should be 2
+  // counts commands only
+  size_t cmdc = 0;
+
+  for (int i = 0; i < *argc; i++) {
     if (tokenv[i] == NULL) {
       err_exit("no token when creating arg vector", ERRNOTOKEN);
     }
@@ -465,28 +474,29 @@ void shell_parser_build_argv_from_tokens(size_t argc, char **argv,
 
     if (tokenv[i]->type != EXPRESSION) {
       if (tokenv[i] != NULL) {
-        argv[i] = tokenv[i]->buf;
+        argv[cmdc++] = tokenv[i]->buf;
       }
     }
   }
+  *argc = cmdc;
 }
 
-typedef struct cmd_ctx {
-  const semantic_token_t type;
-  const size_t argc;
-  const char **argv;
-} cmd_ctx_t;
-
-// call back
+// callback type
 typedef int (*handler_t)(size_t, void **);
 
 void run(handler_t callback, size_t iterator, size_t argc, void **argv);
 
 void command_handler(size_t argc, semantic_token_t **tokenv) {
   char *argv[MAX] = {0};
-  // convert_tokenv_to_exec_argv();
-  shell_parser_build_argv_from_tokens(argc, argv, tokenv);
+  // decrement argc if tokens are pruned here
+  shell_parser_build_argv_from_tokens(&argc, argv, tokenv);
   /*
+
+  this is what you want, if x isn't a command, then just fail
+  if x is, pass 2 as arg i.e.
+
+  exec(x 2)
+  exec(ls $x) here x is "mydir" would work
 
   // handle builtins here
   if (strcmp(argv[0], "exit") == MATCH)
