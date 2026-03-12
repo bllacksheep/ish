@@ -509,8 +509,6 @@ shell_state_t *shell_get_shell_state(void) {
 void shell_execution_pipeline() {
   // if private can only hold a pointer
   shell_state_t *ish = shell_get_shell_state();
-  shell_parser_promote_tokens_to_argv(&ish->argc, ish->argv,
-                                      ish->session_tokens);
 
   // should run at least once
   for (int i = 0; i < (ish->iterator_x == 0 ? 1 : ish->iterator_x); i++) {
@@ -521,13 +519,35 @@ void shell_execution_pipeline() {
 
 void run(handler_t callback, size_t argc, void **argv) { callback(argc, argv); }
 
+void shell_set_shell_state(semantic_token_t **tokens, size_t token_count,
+                           size_t it_x, size_t it_i, size_t it_j, size_t ac,
+                           char **av, handler_t handle) {
+
+  shell_state_t *ish = shell_get_shell_state();
+  // shell_set_shell_tokens(ish, tokens)
+  ish->session_tokens = tokens;
+  // shell_set_shell_it_x(ish, it_x)
+  ish->iterator_x = it_x;
+  // shell_set_shell_it_i(ish, it_i)
+  ish->iterator_i = it_i;
+  // shell_set_shell_j(ish, it_j)
+  ish->iterator_j = it_j;
+  // shell_set_shell_tc(ish, token_count)
+  ish->session_token_count = token_count;
+  // shell_set_shell_argc(ish, ac)
+  ish->argc = ac;
+  // shell_set_shell_argv(ish, argv)
+  ish->argv = av; // copy proper
+  // shell_set_command_handler(ish);
+  // should set shell handler here, and promote vars
+}
+
 // parser orchestroator pull together iterator + command + args
 void shell_simple_parser(const char *buf) {
-  // won't need to get state here, just set it
-  shell_state_t *ish = shell_get_shell_state();
-
   size_t it = 0;
   size_t tc = 0;
+  size_t argc = 0;
+  char *argv[MAX] = {0};
 
   // soft max on num args per command
   semantic_token_t *tvec[MAX] = {0};
@@ -535,11 +555,12 @@ void shell_simple_parser(const char *buf) {
   shell_parser_evaluate_iterator(&input, &it);
   shell_parser_create_tokens(input, tvec, &tc);
   shell_parser_evaluate_expressions(tc, tvec);
+  shell_parser_promote_tokens_to_argv(&argc, argv, tvec);
 
-  // shell_set_shell_state(tvec, tc, it, i, j);
-  ish->session_tokens = tvec;
-  ish->iterator_x = it;
-  ish->session_token_count = tc;
+  size_t i = 0;
+  size_t j = 0;
+
+  shell_set_shell_state(tvec, tc, it, i, j, argc, argv);
 
   shell_execution_pipeline();
   // shell_destroy_tokens(tc, tvec);
