@@ -527,10 +527,15 @@ void shell_execution_handler(size_t argc, char **argv) {
   case 0:
     // walks built ins every time and compares, kind of bogus
     for (size_t i = 0; i < MAX; i++) {
+      // will move to hashmap in builtins.c
+      if (builtins[i].name == NULL) {
+        break;
+      }
       if (strncmp(builtins[i].name, argv[0], 30) == MATCH) {
         handler_t hd = builtins[i].builtin;
         // if run errors how to handle?
         run(hd, argc, (void **)argv);
+        break;
       }
     }
 
