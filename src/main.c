@@ -483,35 +483,19 @@ void shell_parser_promote_tokens_to_argv(size_t *argc, char **argv,
 }
 
 // callback type
-typedef int (*handler_t)(size_t, void **);
 
-void run(handler_t callback, size_t iterator, size_t argc, void **argv);
-
-void shell_execution_pipeline(size_t argc, semantic_token_t **tokenv) {
+void shell_execution_pipeline(size_t iter, size_t argc,
+                              semantic_token_t **tokenv) {
   char *argv[MAX] = {0};
   shell_parser_promote_tokens_to_argv(&argc, argv, tokenv);
-  // handle builtins here
-  /*
-  if (strcmp(argv[0], "exit") == MATCH)
-    return free_exit;
-  if (strcmp(argv[0], "q") == MATCH)
-    return free_exit;
 
-  if (strcmp(arg_vector[0], "unset") == MATCH)
-    exec_command(BUILTIN, arg_count, arg_vector);
-  */
-
-  // decide how the set of tokens should be run
-  // execute the command
-  size_t iterator = 0;
-  handler_t handler = free_exit;
-  run(handler, iterator, argc, (void **)argv);
+  // should run at least once
+  for (int i = 0; i < (iter == 0 ? 1 : iter); i++) {
+    shell_execution_handler(argc, argv);
+  }
 }
 
-void run(handler_t callback, size_t iterator, size_t argc, void **argv) {
-  for (int i = 0; i < (iterator == 0 ? 1 : iterator); i++)
-    callback(argc, argv);
-}
+void run(handler_t callback, size_t argc, void **argv) { callback(argc, argv); }
 
 // parser orchestroator pull together iterator + command + args
 void shell_simple_parser(const char *buf) {
@@ -525,46 +509,41 @@ void shell_simple_parser(const char *buf) {
   shell_parser_create_tokens(input, tvec, &tc);
   shell_parser_evaluate_expressions(tc, tvec);
 
-  shell_execution_pipeline(tc, tvec);
+  shell_execution_pipeline(it, tc, tvec);
 
   // shell_destroy_tokens(tc, tvec);
   return;
 }
 
-void shell_exection_handler(int type, size_t argc, char **argv) {
+// find the builtin to run or execvp
+void shell_execution_handler(size_t argc, char **argv) {
   pid_t pid;
   pid = fork();
 
-  // need state machine here for evaluating cmd
-  // expressions first from token list
-  // command or builtin last
   switch (pid) {
   case -1:
     err_exit("fork", EXIT_FAILURE);
     break;
   case 0:
-    switch (type) {
-    case BUILTIN:
-      // do O(1) look up in hash table but talk for now
-      for (size_t i = 0; i < MAX; i++) {
-        if (builtins[i].name == argv[0])
-          builtins[i].builtin(argc, (void **)argv);
+    // walks built ins every time and compares, kind of bogus
+    for (size_t i = 0; i < MAX; i++) {
+      if (strncmp(builtins[i].name, argv[0], 30) == MATCH) {
+        handler_t hd = builtins[i].builtin;
+        // if run errors how to handle?
+        run(hd, argc, (void **)argv);
       }
-      break;
-    default:
-      // vp path aware
-      if (execvp(argv[0], argv) == -1) {
-        fprintf(stderr, "%s: command not found\n", *argv);
-        _exit(EXIT_FAILURE);
-      };
-      exit(EXIT_SUCCESS);
-      break;
     }
+
+    // vp path aware
+    if (execvp(argv[0], argv) == -1) {
+      fprintf(stderr, "%s: command not found\n", *argv);
+      _exit(EXIT_FAILURE);
+    };
+    exit(EXIT_SUCCESS);
     break;
   default:
     // in sys/wait.h for the parent
     wait(NULL);
-    break;
   }
 }
 

@@ -35,12 +35,15 @@ typedef struct builtin {
   char *name;
 } builtin_t;
 
+typedef int (*handler_t)(size_t, void **);
+
 void shell_simple_parser(const char *);
-void shell_execution_pipeline(size_t, semantic_token_t **);
+void shell_execution_pipeline(size_t, size_t, semantic_token_t **);
 builtin_t *get_builtins(void);
 ssize_t read_input(char *);
 void repl();
-void shell_execution_handler(int, size_t, char **);
+void shell_execution_handler(size_t, char **);
+void shell_run_command(handler_t callback, size_t argc, void **argv);
 void mystrcspn(char **);
 void shell_destroy_tokens(size_t, semantic_token_t **);
 void destroy_args(size_t, char **);
