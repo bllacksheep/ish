@@ -14,6 +14,7 @@ enum ERRORS {
   ERRNOEXPR,
   ERRALLOC,
   ERRBUFFERINUSE,
+  ERRNOTOKEN,
 };
 
 builtin_t builtins[MAX] = {
@@ -375,7 +376,6 @@ void shell_parser_evaluate_expressions(size_t argc, semantic_token_t **tokenv) {
         break;
       }
       if (*curr_token_pos == '=') {
-        // move to ins(k, v)
         // next increment will be to 0
         i = -1;
         state = CREATEVALUE;
@@ -449,15 +449,24 @@ void shell_parser_build_argv_from_tokens(size_t argc, char **argv,
   if (argv == NULL) {
     err_exit("no buffer when creating arg vector", ERRNOBUFFER);
   }
+  if (tokenv == NULL) {
+    err_exit("no tokens when creating arg vector", ERRNOTOKEN);
+  }
 
   for (int i = 0; i < argc; i++) {
+    if (tokenv[i] == NULL) {
+      err_exit("no token when creating arg vector", ERRNOTOKEN);
+    }
+
     // will fail due to last item being NULL
     if (argv[i] != NULL) {
       err_exit("arg vector pos should be empty", ERRBUFFERINUSE);
     }
 
-    if (tokenv[i] != NULL) {
-      argv[i] = tokenv[i]->buf;
+    if (tokenv[i]->type != EXPRESSION) {
+      if (tokenv[i] != NULL) {
+        argv[i] = tokenv[i]->buf;
+      }
     }
   }
 }
