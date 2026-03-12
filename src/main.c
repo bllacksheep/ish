@@ -540,6 +540,10 @@ void shell_execution_handler(size_t argc, char **argv) {
       }
     }
 
+    // if $y not set, exit and do nothing
+    if (argv[0][0] == '\0' && argc == 1) {
+      exit(EXIT_SUCCESS);
+    }
     // vp path aware
     if (execvp(argv[0], argv) == -1) {
       fprintf(stderr, "%s: command not found\n", *argv);

@@ -117,9 +117,10 @@ const char *ht_get_var(const char *item_k) {
   size_t item_kl = key_get_len(item_k);
   const ht_item_t *item = item_lookup_slot(table, item_k, item_kl);
   if (item != NULL) {
-    return strdup(item->value);
+    if (item->value == NULL)
+      return strdup("");
   }
-  return NULL;
+  return strdup(item->value);
 }
 
 // take safe len of key k
