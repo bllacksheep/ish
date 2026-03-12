@@ -43,7 +43,7 @@ void exec_command(int, size_t, char **);
 void mystrcspn(char **);
 void destroy_tokens(size_t, semantic_token_t **);
 void destroy_args(size_t, char **);
-void parse_expr(size_t, semantic_token_t **, char **);
+void parse_expr(size_t, semantic_token_t **);
 void parse_iterator(const char **, size_t *);
 void parser_tokenize(const char *, semantic_token_t **, size_t *);
 void has_iterator(parse_state_t);
@@ -52,7 +52,7 @@ void parser_set_token_val(char *, semantic_token_t *);
 int is_expression(char *);
 int is_command(char *);
 int is_builtin(char *);
-void tokenv_to_argv(size_t, char **, semantic_token_t **, char *);
+void tokenv_to_argv(size_t, char **, semantic_token_t **);
 // builtins
 int echo(size_t, void **);
 int free_exit(size_t, void **);

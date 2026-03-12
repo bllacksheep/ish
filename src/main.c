@@ -226,7 +226,9 @@ void parser_tokenize(const char *buf, semantic_token_t **tokenv, size_t *argn) {
   size_t argc = 0;
 
   while (*p != '\0') {
-    for (size_t i = 0; *p != ' ' && *p != ';' && *p != '\0'; p++) {
+    if (*p == ' ')
+      p++;
+    for (size_t i = 0; *p != ';' && *p != '\0'; p++) {
       capture[i++] = *p;
     }
     // now that we have work bounded by ' ' or '\0' it's a token
@@ -237,14 +239,19 @@ void parser_tokenize(const char *buf, semantic_token_t **tokenv, size_t *argn) {
     if (*token_vec == NULL) {
       err_exit("alloc token", ERRALLOC);
     }
+
     parser_set_token_val(capture, *token_vec);
     parser_set_token_type(*token_vec);
     // count arg
     argc++;
-    // skip space
-    p++;
     // next token
     token_vec++;
+    // skip space
+    if (*p == ';' || *p == ' ') {
+      p++;
+      if (*p + 1 == ' ')
+        p++;
+    }
     memset(capture, 0, sizeof(capture));
   }
   // set the last arg to NULL required by execv family of functions
@@ -285,7 +292,7 @@ char *getval(char *k) {
 // semi-colon ; has to be handled before calling parse_expr and parse_expr needs
 // to be called for each colon separated expr
 // parse x=1;y=2 expressions adding variable creation and reference x=$y
-void parse_expr(size_t argc, semantic_token_t **tokenv, char **expr_value) {
+void parse_expr(size_t argc, semantic_token_t **tokenv) {
   if (tokenv == NULL || *tokenv == NULL) {
     err_exit("no expression buffer", ERRNOBUFFER);
   }
@@ -319,13 +326,20 @@ void parse_expr(size_t argc, semantic_token_t **tokenv, char **expr_value) {
     while ((*token_vec)->type != EXPRESSION) {
       token_vec++;
       if (*token_vec == NULL)
-        // exhausted tokens at this point
+        // exhausted tokens at this point nothing to do
         return;
     }
 
     switch (state) {
     case IDLE:
-      curr_token_pos = (*token_vec)->buf;
+      // first token assignment or next token, not breaking in token like 'x=1
+      // $y'
+      if (curr_token_pos == NULL || *curr_token_pos != ' ')
+        curr_token_pos = (*token_vec)->buf;
+      // continue to eval curr token if ' ' move beyond ' '
+      if (*curr_token_pos == ' ')
+        curr_token_pos++;
+
       if (isalpha(*curr_token_pos)) {
         key[i] = *curr_token_pos;
         curr_token_pos++;
@@ -355,7 +369,8 @@ void parse_expr(size_t argc, semantic_token_t **tokenv, char **expr_value) {
         if ((*token_vec)->buf != NULL)
           free((*token_vec)->buf);
         */
-        *expr_value = (char *)ht_get_var(key);
+        (*token_vec)->buf = (char *)ht_get_var(key);
+        (*token_vec)->type = COMMAND;
         state = DONE;
         break;
       }
@@ -388,10 +403,11 @@ void parse_expr(size_t argc, semantic_token_t **tokenv, char **expr_value) {
         curr_token_pos++;
         break;
       }
-      if (*curr_token_pos == '\0') {
+      if (*curr_token_pos == '\0' || *curr_token_pos == ' ') {
         // retain shell session variable state here
         // add value to hash table
         if (ht_put_var(key, val) == EXIT_SUCCESS) {
+          // since this is an expression this token is no longer useful
           state = NEXT;
           break;
         }
@@ -413,7 +429,9 @@ void parse_expr(size_t argc, semantic_token_t **tokenv, char **expr_value) {
       i = -1;
       memset(key, 0, sizeof(key));
       memset(val, 0, sizeof(val));
-      token_vec++;
+      // if buffer exausted next token, else potentially input 'x=1 $y'
+      if (*curr_token_pos == '\0')
+        token_vec++;
       state = IDLE;
       break;
     case DONE:
@@ -433,24 +451,18 @@ int echo(size_t argc, void **argv) {
   return 0;
 }
 
-void tokenv_to_argv(size_t argc, char **argv, semantic_token_t **tokenv,
-                    char *var) {
-  if (argv == NULL || tokenv == NULL) {
+void tokenv_to_argv(size_t argc, char **argv, semantic_token_t **tokenv) {
+  if (argv == NULL) {
     err_exit("no buffer when creating arg vector", ERRNOBUFFER);
   }
+
   for (int i = 0; i < argc; i++) {
     // will fail due to last item being NULL
     if (argv[i] != NULL) {
       err_exit("arg vector pos should be empty", ERRBUFFERINUSE);
     }
 
-    if (tokenv[i] == NULL || tokenv[i]->buf == NULL) {
-      err_exit("no token buffer when setting arg vector", ERRNOBUFFER);
-    }
-    // set pointer addresses of argv
-    if (var != NULL) {
-      argv[i] = var;
-    } else {
+    if (tokenv[i] != NULL) {
       argv[i] = tokenv[i]->buf;
     }
   }
@@ -462,61 +474,75 @@ typedef struct cmd_ctx {
   const char **argv;
 } cmd_ctx_t;
 
-// parser orchestroator pull together iterator + command + args
-void simple_parser(const char *buf) {
-  // real parsing logic on c goes here
-  size_t iterator = 0;
-  size_t arg_count = 0;
-  // soft max on num args per command
-  // used to derived argument types
-  semantic_token_t *token_vector[MAX] = {0};
-  // passed to exec command once references are resolved
-  char *arg_vector[MAX] = {0};
+// call back
+typedef int (*handler_t)(size_t, void **);
 
-  const char *input = buf;
+void run(handler_t callback, size_t iterator, size_t argc, void **argv);
 
-  parse_iterator(&input, &iterator);
-  // by convention use cmd ... args ... NULL terminate in NULL
-  // return or set argc, command must end with NULL see execv
-  //
-  //
-  // colon has to be handled here...
-  parser_tokenize(input, token_vector, &arg_count);
-  char *shell_var_val = 0;
-  parse_expr(arg_count, token_vector, &shell_var_val);
-
+void command_handler(size_t argc, semantic_token_t **tokenv) {
+  char *argv[MAX] = {0};
+  // convert_tokenv_to_exec_argv();
+  tokenv_to_argv(argc, argv, tokenv);
   /*
-  // idea here that many tokens exist in vector, how to get the overall typ
-  cmd_ctx_t ctx = {
-      (*token_vector)->type,
-      arg_count,
-      arg_vector,
-  };
-  */
-  // needed? *token type encoded in the vector pass back
-  // simplify below
-  tokenv_to_argv(arg_count, arg_vector, token_vector, shell_var_val);
 
   // handle builtins here
-  if (strcmp(arg_vector[0], "exit") == MATCH)
-    free_exit(arg_count, (void **)token_vector);
-  if (strcmp(arg_vector[0], "q") == MATCH)
-    free_exit(arg_count, (void **)token_vector);
+  if (strcmp(argv[0], "exit") == MATCH)
+    return free_exit;
+  if (strcmp(argv[0], "q") == MATCH)
+    return free_exit;
+  // free_exit(argc, (void **)tokenv);
+
+  */
 
   /*
   if (strcmp(arg_vector[0], "unset") == MATCH)
     exec_command(BUILTIN, arg_count, arg_vector);
   */
 
-  // iterator loop
-  for (int i = 0; i < (iterator == 0 ? 1 : iterator); i++) {
-    if (strcmp(arg_vector[0], "echo") == MATCH) {
-      exec_command(BUILTIN, arg_count, arg_vector);
-      break;
-    }
-    exec_command(COMMAND, arg_count, arg_vector);
-  }
-  destroy_tokens(arg_count, token_vector);
+  // decide how the set of tokens should be run
+  // execute the command
+  size_t iterator = 0;
+  handler_t handler = free_exit;
+  run(handler, iterator, argc, (void **)argv);
+}
+
+void run(handler_t callback, size_t iterator, size_t argc, void **argv) {
+  for (int i = 0; i < (iterator == 0 ? 1 : iterator); i++)
+    callback(argc, argv);
+}
+
+// parser orchestroator pull together iterator + command + args
+void simple_parser(const char *buf) {
+  // real parsing logic on c goes here
+  size_t it = 0;
+  size_t tc = 0;
+  // soft max on num args per command
+  semantic_token_t *tvec[MAX] = {0};
+  const char *input = buf;
+  parse_iterator(&input, &it);
+  // parser_create_token_vector
+  parser_tokenize(input, tvec, &tc);
+  char *shell_var_val = 0;
+
+  /*
+   *
+  // y=2; x; x=1 $y
+  // 1 y=2 --- can be removed from tokens
+  // 2 ls
+  // 3 x=1 -- can be removed from tokens
+  // 4 $y --- can be set or retive value of y as token if exists
+  // if $y not exists, set token at "" empty
+   *
+   *
+   *  so final is ls $y  where if y not exists, set as ""
+   * */
+
+  // parser_evaluate_expressions
+  parse_expr(tc, tvec);
+
+  command_handler(tc, tvec);
+
+  // destroy_tokens(tc, tvec);
   return;
 }
 
