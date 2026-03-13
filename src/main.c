@@ -1,5 +1,6 @@
 #include "ht.h"
 #include "ish.h"
+#include "shell.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -513,7 +514,7 @@ void shell_execution_pipeline() {
   // shell functions will run this
   // should run at least once
   for (int i = 0; i < (ish->iterator_x == 0 ? 1 : ish->iterator_x); i++) {
-    shell_execution_handler(ish->argc, ish->argv);
+    shell_run_shell_command(ish, av);
   }
   // shell_clean_shell_state();
 }
@@ -543,8 +544,14 @@ void shell_set_shell_tc(shell_state_t *st, size_t tc) {
 
 void shell_set_shell_argc(shell_state_t *st, size_t argc) { st->argc = argc; }
 
-void shell_set_command_handler(shell_state_t *st, char **argv) {
-  // determine the handler
+builtin_t *shell_get_shell_builtins(char *b) { return NULL; }
+
+void shell_run_shell_command(shell_state_t *st) {
+  handler_t *hd = shell_get_shell_builtins((*st)->argv[0]);
+  if (hd != NULL) {
+    shell_run_shell_command((void *)hd, st->argc, (void **)st->argv);
+  }
+  shell_run_shell_command((void *)execvp, st->argc, (void **)st->argv);
 }
 
 void shell_set_shell_state(semantic_token_t **tokens, size_t token_count,
@@ -559,7 +566,6 @@ void shell_set_shell_state(semantic_token_t **tokens, size_t token_count,
   shell_set_shell_tc(ish, token_count);
   shell_set_shell_argc(ish, ac);
   shell_set_shell_argv(ish, av);
-  shell_set_command_handler(ish, av);
 }
 
 // parser orchestroator pull together iterator + command + args
