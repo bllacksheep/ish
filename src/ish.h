@@ -26,7 +26,7 @@ typedef struct semantic_token {
   semantic_type_t type;
 } semantic_token_t;
 
-enum parser_matching {
+enum match {
   MATCH = 0,
 };
 

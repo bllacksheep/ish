@@ -1,4 +1,5 @@
 #include "ht.h"
+#include "errors.h"
 #include "ht_internal.h"
 #include <stdio.h>
 #include <stdlib.h>

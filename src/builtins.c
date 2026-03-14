@@ -1,23 +1,26 @@
 #include "builtins.h"
 #include "errors.h"
-#include <ctype.h>
+#include "ht.h"
+#include "shell.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-builtin_t builtins[MAX] = {
+#define MAX_NUM_BUILTINS 10
+
+builtin_t builtins[MAX_NUM_BUILTINS] = {
     {echo, "echo"},
-    {free_exit, "exit"},
-    {free_exit, "q"},
+    {quit, "exit"},
+    {quit, "q"},
     {unset, "unset"},
 };
 
 builtin_t *get_builtins(void) { return builtins; }
 
 // free and exit
-int free_exit(size_t argc, void **argv) {
+int quit(size_t argc, void **argv) {
   shell_destroy_tokens(argc, (semantic_token_t **)argv);
   exit(EXIT_SUCCESS);
   return 0;
@@ -30,7 +33,7 @@ int is_builtin(char *buf) {
     err_exit("no buffer in builtin", ERRNOBUFFER);
   }
   builtin_t *b = get_builtins();
-  for (int i = 0; i < MAX && b[i].name != NULL; i++) {
+  for (int i = 0; i < MAX_NUM_BUILTINS && b[i].name != NULL; i++) {
     if (strcmp(buf, b[i].name) == MATCH)
       return MATCH;
   }

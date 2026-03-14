@@ -21,5 +21,9 @@ enum TOKENERRORS {
   ERRNOTOKENCOUNT,
 };
 
+enum match {
+  MATCH = 0,
+};
+
 int err_exit(char *, unsigned);
 #endif
