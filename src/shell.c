@@ -9,6 +9,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define MAX_INPUT_STREAM 100
+#define MAX_ARGV_LENGTH 10
+
 typedef struct ish_state {
   semantic_token_t **session_tokens;
   size_t session_token_count;
@@ -18,7 +21,7 @@ typedef struct ish_state {
                      // builtins
                      // environment variables
   size_t argc;
-  char *argv[MAX];
+  char *argv[MAX_ARGV_LENGTH];
   handler_t handler;
 } shell_state_t;
 
@@ -33,7 +36,7 @@ void mystrcspn(char **);
 void shell_destroy_tokens(size_t, semantic_token_t **);
 
 void shell_repl() {
-  char input[MAX + 1] = {0};
+  char input[MAX_INPUT_STREAM + 1] = {0};
   printf("> ");
   if (fflush(stdout) == EOF) {
     err_exit("repl flush", EXIT_FAILURE);
@@ -60,7 +63,7 @@ ssize_t shell_read_input_stream(char *buf) {
   if (buf == NULL) {
     err_exit("no input buffer", ERRNOBUFFER);
   }
-  ssize_t n = read(STDIN_FILENO, buf, MAX);
+  ssize_t n = read(STDIN_FILENO, buf, MAX_INPUT_STREAM);
   if (n == -1) {
     err_exit("failed to read input", EXIT_FAILURE);
   }
@@ -218,7 +221,7 @@ void shell_execution_handler(size_t argc, char **argv) {
     }
     */
     // walks built ins every time and compares, kind of bogus
-    for (size_t i = 0; i < MAX; i++) {
+    for (size_t i = 0; i < MAX_BUILTINS; i++) {
       // will move to hashmap in builtins.c
       if (builtins[i].name == NULL) {
         break;
