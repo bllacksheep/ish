@@ -11,17 +11,6 @@
 #define STATIC static
 #endif
 
-enum ht_errors {
-  ERRHTINIT = 100,
-  ERRHTGET,
-  ERRHTINS,
-  ERRHTDEL,
-  ERRHTNOKEYLEN,
-  ERRHTNOTABLE,
-  ERRHTNOBUF,
-  ERRHTNOITEM,
-};
-
 typedef struct ht_item {
   const char *key;
   const char *value;

@@ -61,5 +61,6 @@ void shell_parser_promote_tokens_to_argv(size_t *, char **,
 // builtins
 int echo(size_t, void **);
 int free_exit(size_t, void **);
+int err_exit(char *, unsigned);
 int unset(size_t, void **);
 #endif
