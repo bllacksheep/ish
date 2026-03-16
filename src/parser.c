@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "builtins.h"
 #include "errors.h"
 #include "shell.h"
 #include <ctype.h>
@@ -29,10 +30,6 @@ typedef struct semantic_token {
   char *buf;
   semantic_type_t type;
 } semantic_token_t;
-
-enum parser_matching {
-  MATCH = 0,
-};
 
 void parser_evaluate_expressions(size_t, semantic_token_t **);
 void parser_evaluate_iterator(const char **, size_t *);

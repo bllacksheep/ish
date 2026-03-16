@@ -9,6 +9,7 @@ typedef struct builtin {
 
 typedef int (*handler_t)(size_t, void **);
 
+builtin_t *get_builtins(void);
 int echo(size_t, void **);
 int quit(size_t, void **);
 int unset(size_t, void **);
