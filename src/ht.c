@@ -147,7 +147,7 @@ STATIC size_t key_get_len(const char *k) {
   return kl_safe;
 }
 
-int ht_put_item(ht_table_t table, const char *item_k, const char *item_v) {
+int ht_put_item(ht_table_t table, const char *item_k, const void *item_v) {
 
   if (item_k == NULL || item_v == NULL) {
     fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);

@@ -28,7 +28,7 @@ extern ht_table_t *ht_table;
 
 STATIC ht_table_t *table_init(void);
 STATIC ht_table_t *table_get(void);
-STATIC const ht_item_t *item_lookup_slot(const ht_table_t *, const char *,
+STATIC const ht_item_t *item_lookup_slot(const ht_table_t, const char *,
                                          const size_t);
 STATIC unsigned item_hash(const char *, const size_t, const unsigned);
 STATIC long long unsigned hash(const char *, const size_t, const unsigned);

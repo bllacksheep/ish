@@ -7,7 +7,6 @@ typedef struct builtin builtin_t;
 
 typedef int (*handler_t)(size_t, void **);
 
-builtin_t *get_builtins(void);
 size_t bt_get_fn_count(void);
 void bt_init_builtins(ht_table_t);
 int echo(size_t, void **);

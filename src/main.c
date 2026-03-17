@@ -5,6 +5,7 @@
 #ifndef TEST
 int main(void) {
   ht_table_t bt = ht_create_table(bt_get_fn_count());
+
   bt_init_builtins(bt);
   shell_set_shell_builtins(bt);
 

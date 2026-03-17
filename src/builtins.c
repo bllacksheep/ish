@@ -25,7 +25,7 @@ int quit(size_t argc, void **argv) {
   return 0;
 }
 
-int unset(size_t argc, void **argv) { return ht_del_var(argv[1]); }
+int unset(size_t argc, void **argv) { return ht_del_item(argv[1]); }
 
 int is_builtin(char *buf) {}
 
@@ -40,11 +40,11 @@ int echo(size_t argc, void **argv) {
 handler_t bt_get_fn(ht_table_t table, char *key) {
   void *handle = (void *)ht_get_item(table, key);
 }
-builtin_t *builtins_get_handler(char *builtin);
-void builtins_init_handlers();
-void builtins_init_handlers() {
 
-  ht_put_item("echo", echo);
-  ht_put_item("unset", unset);
-  ht_put_item("quit", exit);
+size_t bt_get_fn_count(void);
+
+void bt_init_builtins(ht_table_t table) {
+  ht_put_item(table, "echo", echo);
+  ht_put_item(table, "unset", unset);
+  ht_put_item(table, "quit", exit);
 }
