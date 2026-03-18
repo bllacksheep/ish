@@ -233,8 +233,17 @@ int ht_del_item(ht_table_t table, const char *item_k) {
   if (item == NULL || item->key == NULL)
     return EXIT_FAILURE;
 
-  item->key = HT_TOMBSTONE;
-  item->value = HT_TOMBSTONE;
+  switch (item->type) {
+  case FUNCTION:
+    item->value.handler = HT_TOMBSTONE;
+    break;
+  case STRING:
+    item->value.string = HT_TOMBSTONE;
+    break;
+  default:
+    return EXIT_FAILURE;
+    break;
+  }
 
   return EXIT_SUCCESS;
 }
