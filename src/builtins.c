@@ -4,19 +4,23 @@
 #include "shell.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define MAX_NUM_BUILTINS 10
+#define MAX_NUM_BUILTINS 3
 
-typedef struct ht_builtin {
-  char *key;
-  int (*value)(size_t, void *[]);
-} ht_item_t;
+typedef struct bt_builtin {
+  char *name;
+  int (*handler)(size_t, void *[]);
+} builtin_t;
 
-// decoupled from ht.c
-static ht_table_t *ht_table = NULL;
+static builtin_t builtins[MAX_NUM_BUILTINS] = {
+    {"echo", echo},
+    {"quit", quit},
+    {"unset", unset},
+};
+
+builtin_t *bt_get_builtins(void) { return builtins; }
 
 // free and exit
 int quit(size_t argc, void **argv) {
@@ -25,9 +29,7 @@ int quit(size_t argc, void **argv) {
   return 0;
 }
 
-int unset(size_t argc, void **argv) { return ht_del_item(argv[1]); }
-
-int is_builtin(char *buf) {}
+int unset(size_t argc, void **argv);
 
 int echo(size_t argc, void **argv) {
   char **args = (char **)argv;
@@ -39,12 +41,24 @@ int echo(size_t argc, void **argv) {
 
 handler_t bt_get_fn(ht_table_t table, char *key) {
   void *handle = (void *)ht_get_item(table, key);
+  return handle;
 }
 
-size_t bt_get_fn_count(void);
+size_t bt_get_fn_count(void) {
+  builtin_t *list_of_builtins = bt_get_builtins();
+  return sizeof(*list_of_builtins);
+}
 
-void bt_init_builtins(ht_table_t table) {
-  ht_put_item(table, "echo", echo);
-  ht_put_item(table, "unset", unset);
-  ht_put_item(table, "quit", exit);
+void bt_init_builtins_table(ht_table_t table) {
+  builtin_t *list_of_builtins = bt_get_builtins();
+  for (size_t i = 0; i < MAX_NUM_BUILTINS; i++) {
+    ht_put_item(table, list_of_builtins[i].name, list_of_builtins[i].handler,
+                FUNCTION);
+  }
+}
+
+void bt_create_table(void) {
+  ht_table_t ht = ht_create_table(bt_get_fn_count());
+  bt_init_builtins_table(ht);
+  shell_set_shell_builtins(ht);
 }

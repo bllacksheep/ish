@@ -10,7 +10,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define MAX 100
+#define TOKEN_MAX_LEN 100
+#define TOKEN_MAX_COUNT 100
 
 typedef struct parse_state parse_state_t;
 
@@ -45,6 +46,7 @@ int is_expression(char *);
 int is_command(char *);
 int is_builtin(char *);
 void parser_promote_tokens_to_argv(size_t *, char **, semantic_token_t **);
+void parser_init_token_table(ht_table_t);
 
 void has_iterator(const parse_state_t s) {
   // the capture is the potential iterator, captured in the caller
@@ -83,7 +85,7 @@ void parser_evaluate_iterator(const char **buf, size_t *iter) {
     err_exit("iterator should always be 0", ERRITERSTATE);
   }
 
-  char capture[MAX + 1] = {0};
+  char capture[TOKEN_MAX_LEN + 1] = {0};
   const char *p = *buf;
   const char **input = buf;
   size_t i = 0;
@@ -123,7 +125,7 @@ int is_builtin(char *buf) {
     err_exit("no buffer in builtin", ERRNOBUFFER);
   }
   builtin_t *b = get_builtins();
-  for (int i = 0; i < MAX && b[i].name != NULL; i++) {
+  for (int i = 0; i < TOKEN_MAX_COUNT && b[i].name != NULL; i++) {
     if (strcmp(buf, b[i].name) == MATCH)
       return MATCH;
   }
@@ -162,7 +164,7 @@ void parser_create_tokens(const char *buf, semantic_token_t **tokenv,
   }
 
   semantic_token_t **token_vec = tokenv;
-  char capture[MAX + 1] = {0};
+  char capture[+1] = {0};
   const char *p = buf;
   size_t argc = 0;
 
@@ -225,8 +227,8 @@ void parser_evaluate_expressions(size_t argc, semantic_token_t **tokenv) {
     err_exit("no expression to parse", ERRNOEXPR);
   }
 
-  char key[MAX + 1] = {0};
-  char val[MAX + 1] = {0};
+  char key[TOKEN_MAX_LEN + 1] = {0};
+  char val[TOKEN_MAX_LEN + 1] = {0};
 
   enum {
     IDLE,
@@ -294,7 +296,7 @@ void parser_evaluate_expressions(size_t argc, semantic_token_t **tokenv) {
         if ((*token_vec)->buf != NULL)
           free((*token_vec)->buf);
         */
-        (*token_vec)->buf = (char *)ht_get_var(key);
+        (*token_vec)->buf = (char *)ht_get_item(key);
         (*token_vec)->type = COMMAND;
         state = DONE;
         break;
@@ -330,7 +332,7 @@ void parser_evaluate_expressions(size_t argc, semantic_token_t **tokenv) {
       if (*curr_token_pos == '\0' || *curr_token_pos == ' ') {
         // retain shell session variable state here
         // add value to hash table
-        if (ht_put_var(key, val) == EXIT_SUCCESS) {
+        if (ht_put_item(key, val, STRING) == EXIT_SUCCESS) {
           // since this is an expression this token is no longer useful
           state = NEXT;
           break;
@@ -408,11 +410,11 @@ void parser_simple_parser(const char *buf) {
   size_t it = 0;
   size_t tc = 0;
   size_t argc = 0;
-  char *argv[MAX] = {0};
+  char *argv[TOKEN_MAX_COUNT] = {0};
 
   // soft max on num args per command
   // who is going to own this
-  semantic_token_t *tvec[MAX] = {0};
+  semantic_token_t *tvec[TOKEN_MAX_COUNT] = {0};
 
   const char *input = buf;
   parser_evaluate_iterator(&input, &it);
@@ -424,7 +426,7 @@ void parser_simple_parser(const char *buf) {
   size_t i = 0;
   size_t j = 0;
 
-  shell_set_shell_session_state(tvec, tc, it, i, j, argc, argv);
+  shell_set_command_state(tvec, tc, it, i, j, argc, argv);
   return;
 }
 
@@ -452,4 +454,9 @@ void parser_copy_tokens(semantic_token_t **stoutbuf, semantic_token_t **inbuf,
     }
     *stoutbuf[i] = *inbuf[i];
   }
+}
+
+void parser_create_table(void) {
+  ht_table_t ht = ht_create_table(TOKEN_MAX_COUNT);
+  shell_set_shell_builtins(ht);
 }
