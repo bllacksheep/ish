@@ -61,17 +61,33 @@ STATIC const ht_item_t *item_lookup_slot(const ht_table_t ht,
     exit(ERRHTNOITEM);
   }
 
+  void *handler = NULL;
+  char *string = NULL;
+
   while (1) {
-    if (attempt == HT_MAX - 1)
+    if (attempt == HT_MAX - 1) {
+      return NULL;
       break;
+    }
     // if NULL won't be beyond this point
-    if (item->key == NULL)
-      return item;
-    if (item->key == HT_TOMBSTONE)
-      return item;
-    // if tombstone keep looking
-    if (strncmp(item->key, item_key, HT_MAX_KEY_LEN) == 0)
-      return item;
+
+    switch (item->type) {
+    case FUNCTION:
+      handler = (void *)item->value.handler;
+      if (handler == NULL || handler == HT_TOMBSTONE)
+        return item;
+      break;
+    case STRING:
+      string = (void *)item->value.string;
+      if (string == NULL || string == HT_TOMBSTONE)
+        return item;
+      if (strncmp(item->key, item_key, HT_MAX_KEY_LEN) == 0)
+        return item;
+      break;
+    default:
+      fprintf(stderr, "i.sh: ht slot lookup error, code: %d", ERRHTINIT);
+      break;
+    }
     attempt++;
     // retry step by 1
     try = item_hash(item_key, item_key_len, attempt);
@@ -116,11 +132,18 @@ const char *ht_get_item(ht_table_t table, const char *item_k) {
 
   size_t item_kl = key_get_len(item_k);
   const ht_item_t *item = item_lookup_slot(table, item_k, item_kl);
-  if (item != NULL) {
-    if (item->value == NULL)
-      return strdup("");
+
+  switch (item->type) {
+  case FUNCTION:
+    return item->value.handler;
+    break;
+  case STRING:
+    return item->value.string;
+    break;
+  default:
+    return NULL;
+    break;
   }
-  return strdup(item->value);
 }
 
 // take safe len of key k
@@ -148,7 +171,7 @@ STATIC size_t key_get_len(const char *k) {
 }
 
 int ht_put_item(ht_table_t table, const char *item_k, const void *item_v,
-                const enum item_type type) {
+                const type_t type) {
 
   if (item_k == NULL || item_v == NULL) {
     fprintf(stderr, "i.sh: ht no buffer, code: %d", ERRHTNOBUF);
@@ -184,6 +207,7 @@ int ht_put_item(ht_table_t table, const char *item_k, const void *item_v,
     item->value.string = item_v;
     break;
   default:
+    fprintf(stderr, "i.sh: issue in get item with type");
     break;
   }
 

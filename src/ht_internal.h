@@ -13,7 +13,7 @@
 
 typedef struct ht_item {
   const char *key;
-  const type_t type;
+  type_t type;
   // could just use void here...
   union {
     const char *string;
@@ -26,6 +26,7 @@ struct ht_table {
   size_t count;
 };
 
+// kind of don't need this anymore
 #ifdef TEST
 // so the test file can find it
 extern ht_table_t *ht_table;
