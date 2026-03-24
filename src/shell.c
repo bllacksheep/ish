@@ -112,7 +112,7 @@ shell_state_t *shell_get_shell_state(void) {
   return &ishell;
 }
 
-semantic_token_t **shell_get_tokenvec_table(void) {
+semantic_token_t **shell_get_token_vector(void) {
   shell_state_t *st = shell_get_shell_state();
   return st->tokenvec;
 }

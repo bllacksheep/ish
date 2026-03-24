@@ -1,5 +1,4 @@
 #include "parser.h"
-#include "builtins.h"
 #include "errors.h"
 #include "ht.h"
 #include "shell.h"
@@ -14,9 +13,6 @@
 #define TOKEN_MAX_COUNT 100
 
 typedef struct parse_state parse_state_t;
-
-// decoupled from ht.c
-static ht_table_t *ht_table = NULL;
 
 typedef struct parse_state {
   const char *capture;
@@ -420,7 +416,7 @@ void parser_simple_parser(const char *buf) {
 
   // soft max on num args per command
   // who is going to own this
-  semantic_token_t **tvec = shell_get_token_table();
+  semantic_token_t **tvec = shell_get_token_vector();
   parser_create_tokens(input, tvec, &tc);
   parser_evaluate_expressions(tc, tvec);
   parser_promote_tokens_to_argv(&argc, argv, tvec);

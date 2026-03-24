@@ -1,5 +1,6 @@
 #ifndef _PARSER_H
 #define _PARSER_H 1
+#include "ht.h"
 #include <unistd.h>
 typedef struct semantic_token semantic_token_t;
 
