@@ -37,7 +37,7 @@ void shell_execution_handler(size_t, char **);
 void shell_set_shell_state(semantic_token_t **, size_t, size_t, size_t, size_t,
                            size_t, char **);
 void shell_run_shell_command(handler_t, size_t, void **);
-void mystrcspn(char **);
+void mystrcspn(char *const *);
 
 void shell_start_repl() {
   char input[MAX_INPUT_STREAM + 1] = {0};
@@ -84,7 +84,7 @@ ssize_t shell_read_input_stream(char *buf) {
 }
 
 // len bruh
-size_t mylen(char **c) {
+size_t mylen(const char *const *c) {
   if (c == NULL || *c == NULL) {
     err_exit("no buffer to take len", ERRNOBUFFER);
   }
@@ -95,7 +95,7 @@ size_t mylen(char **c) {
 }
 
 // remove a newline by replace it with \0
-void mystrcspn(char **c) {
+void mystrcspn(char *const *c) {
   if (c == NULL || *c == NULL) {
     err_exit("no buffer to remove new line", ERRNOBUFFER);
   }
