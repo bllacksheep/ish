@@ -23,13 +23,13 @@ typedef struct ish_state {
   char *argv[MAX_ARGV_LENGTH];
 
   handler_t handler;
-  // pointer to tables, required by ht api
+  // anchor pointer to tables, required by ht api
   ht_table_t builtins_table;
   ht_table_t token_table;
 } shell_state_t;
 
 // use getter here
-static shell_state_t ishell = {0};
+static shell_state_t state = {0};
 
 void shell_execution_pipeline();
 ssize_t shell_read_input_stream(char *);
@@ -109,17 +109,12 @@ void mystrcspn(char **c) {
 shell_state_t *shell_get_shell_state(void) {
   // shell_check_shell_state();
   // shell_init_shell_state();
-  return &ishell;
+  return &state;
 }
 
-semantic_token_t **shell_get_token_vector(void) {
+semantic_token_t **shell_state_get_token_vector(void) {
   shell_state_t *st = shell_get_shell_state();
   return st->token_vector;
-}
-
-ht_table_t shell_get_token_table(void) {
-  shell_state_t *st = shell_get_shell_state();
-  return st->token_table;
 }
 
 void shell_execution_pipeline() {
@@ -134,34 +129,34 @@ void shell_execution_pipeline() {
   // shell_clean_shell_state();
 }
 
-void shell_set_input_argv(size_t argc, char **argv) {
+void shell_state_set_input_argv(size_t argc, char **argv) {
   shell_state_t *st = shell_get_shell_state();
   memcpy(st->argv, argv, sizeof(*argv) * argc);
 }
 
-void shell_set_input_tokens(semantic_token_t **tokenvec, size_t count) {
+void shell_state_set_input_tokens(semantic_token_t **tokenvec, size_t count) {
   shell_state_t *st = shell_get_shell_state();
   st->token_vec_count = count;
   // assumes st->tokens is cleaned up
   parser_copy_tokens(st->token_vector, tokenvec, st->token_vec_count);
 }
 
-void shell_set_input_it_x(size_t x) {
+void shell_state_set_input_it_x(size_t x) {
   shell_state_t *st = shell_get_shell_state();
   st->iterator_x = x;
 }
 
-void shell_set_input_it_i(size_t i) {
+void shell_state_set_input_it_i(size_t i) {
   shell_state_t *st = shell_get_shell_state();
   st->iterator_i = i;
 }
 
-void shell_set_input_it_j(size_t j) {
+void shell_state_set_input_it_j(size_t j) {
   shell_state_t *st = shell_get_shell_state();
   st->iterator_j = j;
 }
 
-void shell_set_input_argc(size_t argc) {
+void shell_state_set_input_argc(size_t argc) {
   shell_state_t *st = shell_get_shell_state();
   st->argc = argc;
 }
@@ -176,10 +171,10 @@ void shell_set_shell_builtins(ht_table_t builtins) {
 */
 
 // set up default handler here
-handler_t shell_get_default_handler() { return NULL; }
+handler_t shell_state_get_default_handler() { return NULL; }
 
 // find of feel like hanlder just needs to be void* at this point
-void shell_set_input_handler(char *command) {
+void shell_state_set_input_handler(char *command) {
   shell_state_t *st = shell_get_shell_state();
 
   // get built bt name table + command
@@ -189,20 +184,20 @@ void shell_set_input_handler(char *command) {
     st->handler = handle;
   }
   */
-  st->handler = shell_get_default_handler();
+  st->handler = shell_state_get_default_handler();
 }
 
-void shell_set_input_state(semantic_token_t **tokens, size_t token_count,
-                           size_t it_x, size_t it_i, size_t it_j, size_t ac,
-                           char **av) {
+void shell_state_set_input_state(semantic_token_t **tokens, size_t token_count,
+                                 size_t it_x, size_t it_i, size_t it_j,
+                                 size_t ac, char **av) {
 
-  shell_set_input_tokens(tokens, token_count);
-  shell_set_input_it_x(it_x);
-  shell_set_input_it_i(it_i);
-  shell_set_input_it_j(it_j);
-  shell_set_input_argc(ac);
-  shell_set_input_argv(ac, av);
-  shell_set_input_handler(av[0]);
+  shell_state_set_input_tokens(tokens, token_count);
+  shell_state_set_input_it_x(it_x);
+  shell_state_set_input_it_i(it_i);
+  shell_state_set_input_it_j(it_j);
+  shell_state_set_input_argc(ac);
+  shell_state_set_input_argv(ac, av);
+  shell_state_set_input_handler(av[0]);
 }
 
 // find the builtin to run or execvp
@@ -254,7 +249,7 @@ void shell_execution_handler(size_t argc, char **argv) {
   }
 }
 
-void shell_set_token_table(ht_table_t ht) {
+void shell_state_set_token_table(ht_table_t ht) {
   shell_state_t *st = shell_get_shell_state();
   if (ht != NULL) {
     st->token_table = ht;
@@ -263,7 +258,12 @@ void shell_set_token_table(ht_table_t ht) {
   return;
 }
 
-void shell_set_builtin_table(ht_table_t ht) {
+ht_table_t shell_state_get_token_table(void) {
+  shell_state_t *st = shell_get_shell_state();
+  return st->token_table;
+}
+
+void shell_state_set_builtin_table(ht_table_t ht) {
   shell_state_t *st = shell_get_shell_state();
   if (ht != NULL) {
     st->builtins_table = ht;
@@ -272,9 +272,14 @@ void shell_set_builtin_table(ht_table_t ht) {
   return;
 }
 
+ht_table_t shell_state_get_builtin_table(void) {
+  shell_state_t *st = shell_get_shell_state();
+  return st->builtins_table;
+}
+
 void init_shell() {
   // create shell builtins table
-  shell_set_builtin_table(bt_create_table());
+  shell_state_set_builtin_table(bt_create_table());
   // create parser table
-  shell_set_token_table(parser_create_table());
+  shell_state_set_token_table(parser_create_table());
 }

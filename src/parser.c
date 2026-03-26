@@ -115,8 +115,13 @@ int is_expression(char *buf) {
   }
   return !MATCH;
 }
-/*
+
 int is_builtin(char *buf) {
+  if (bt_is_builtin(buf) == MATCH) {
+    return MATCH;
+  }
+  return !MATCH;
+  /*
   if (buf == NULL) {
     err_exit("no buffer in builtin", ERRNOBUFFER);
   }
@@ -127,7 +132,6 @@ int is_builtin(char *buf) {
   }
   return !MATCH;
 }
-*/
 
 // set the type of the member argv
 void parser_set_token_type(semantic_token_t *token) {
@@ -293,79 +297,79 @@ void parser_evaluate_expressions(size_t argc, semantic_token_t **tokenv) {
         if ((*token_vec)->buf != NULL)
           free((*token_vec)->buf);
         */
-        ht_table_t token_table = shell_get_token_table();
-        (*token_vec)->buf = (char *)ht_get_item(token_table, key);
-        (*token_vec)->type = COMMAND;
-        state = DONE;
-        break;
-      }
-      break;
-    case CREATEKEY:
-      if (isalpha(*curr_token_pos)) {
-        key[i] = *curr_token_pos;
-        curr_token_pos++;
-        break;
-      }
-      if (*curr_token_pos == '=') {
-        // next increment will be to 0
-        i = -1;
-        state = CREATEVALUE;
-        // skip '='
-        curr_token_pos++;
-        break;
-      }
-      if (*curr_token_pos == '$') {
-        // feel like I need to reset key here
-        curr_token_pos++;
-        state = GETVALUE;
-      }
-      state = ERROR;
-      break;
-    case CREATEVALUE:
-      if (isalpha(*curr_token_pos) || isdigit(*curr_token_pos)) {
-        val[i] = *curr_token_pos;
-        curr_token_pos++;
-        break;
-      }
-      if (*curr_token_pos == '\0' || *curr_token_pos == ' ') {
-        // retain shell session variable state here
-        // add value to hash table
-        ht_table_t token_table = shell_get_token_table();
-        if (ht_put_item(token_table, key, val, STRING) == EXIT_SUCCESS) {
-          // since this is an expression this token is no longer useful
-          state = NEXT;
-          break;
-        }
-        state = ERROR;
-        break;
-      }
-      // if $x then x should already be in ht
-      if (*curr_token_pos == '$') {
-        curr_token_pos++;
-        val[i] = *curr_token_pos;
-        state = GETVALUE;
-        break;
-      }
-      state = ERROR;
-      break;
-    case ERROR:
-      return;
-    case NEXT:
-      i = -1;
-      memset(key, 0, sizeof(key));
-      memset(val, 0, sizeof(val));
-      // if buffer exausted next token, else potentially input 'x=1 $y'
-      if (*curr_token_pos == '\0')
-        token_vec++;
-      state = IDLE;
-      break;
-    case DONE:
-      return;
-    default:
-      return;
-      break;
-    }
+  ht_table_t token_table = shell_get_token_table();
+  (*token_vec)->buf = (char *)ht_get_item(token_table, key);
+  (*token_vec)->type = COMMAND;
+  state = DONE;
+  break;
+}
+break;
+case CREATEKEY:
+if (isalpha(*curr_token_pos)) {
+  key[i] = *curr_token_pos;
+  curr_token_pos++;
+  break;
+}
+if (*curr_token_pos == '=') {
+  // next increment will be to 0
+  i = -1;
+  state = CREATEVALUE;
+  // skip '='
+  curr_token_pos++;
+  break;
+}
+if (*curr_token_pos == '$') {
+  // feel like I need to reset key here
+  curr_token_pos++;
+  state = GETVALUE;
+}
+state = ERROR;
+break;
+case CREATEVALUE:
+if (isalpha(*curr_token_pos) || isdigit(*curr_token_pos)) {
+  val[i] = *curr_token_pos;
+  curr_token_pos++;
+  break;
+}
+if (*curr_token_pos == '\0' || *curr_token_pos == ' ') {
+  // retain shell session variable state here
+  // add value to hash table
+  ht_table_t token_table = shell_get_token_table();
+  if (ht_put_item(token_table, key, val, STRING) == EXIT_SUCCESS) {
+    // since this is an expression this token is no longer useful
+    state = NEXT;
+    break;
   }
+  state = ERROR;
+  break;
+}
+// if $x then x should already be in ht
+if (*curr_token_pos == '$') {
+  curr_token_pos++;
+  val[i] = *curr_token_pos;
+  state = GETVALUE;
+  break;
+}
+state = ERROR;
+break;
+case ERROR:
+return;
+case NEXT:
+i = -1;
+memset(key, 0, sizeof(key));
+memset(val, 0, sizeof(val));
+// if buffer exausted next token, else potentially input 'x=1 $y'
+if (*curr_token_pos == '\0')
+  token_vec++;
+state = IDLE;
+break;
+case DONE:
+return;
+default:
+return;
+break;
+}
+}
 }
 
 void parser_promote_tokens_to_argv(size_t *argc, char **argv,

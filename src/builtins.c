@@ -1,5 +1,4 @@
 #include "builtins.h"
-#include "errors.h"
 #include "ht.h"
 #include "shell.h"
 #include <stdio.h>
@@ -8,6 +7,7 @@
 #include <unistd.h>
 
 #define MAX_NUM_BUILTINS 3
+int unset(size_t argc, void **argv);
 
 typedef struct bt_builtin {
   char *name;
@@ -22,14 +22,17 @@ static builtin_t builtins[MAX_NUM_BUILTINS] = {
 
 builtin_t *bt_get_builtins(void) { return builtins; }
 
+int unset(size_t argc, void **argv) {
+  exit(EXIT_SUCCESS);
+  return 0;
+}
+
 // free and exit
 int quit(size_t argc, void **argv) {
   shell_destroy_tokens(argc, (semantic_token_t **)argv);
   exit(EXIT_SUCCESS);
   return 0;
 }
-
-int unset(size_t argc, void **argv);
 
 int echo(size_t argc, void **argv) {
   char **args = (char **)argv;
@@ -42,6 +45,15 @@ int echo(size_t argc, void **argv) {
 handler_t bt_get_fn(ht_table_t table, char *key) {
   void *handle = (void *)ht_get_item(table, key);
   return handle;
+}
+
+int bt_is_builtin(char *key) {
+  builtin_t table = shell_state_get_builtin_table();
+  handler_t hd = bt_get_fn(table, key);
+  if (hd != NULL) {
+    return IS;
+  }
+  return !IS;
 }
 
 size_t bt_get_fn_count(void) {
