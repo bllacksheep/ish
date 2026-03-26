@@ -152,7 +152,7 @@ void parser_set_token_val(char *buf, semantic_token_t *token) {
 void parser_create_tokens(const char *buf, semantic_token_t **tokenv,
                           size_t *argn) {
   if (buf == NULL || tokenv == NULL) {
-    err_exit("parse args", EXIT_FAILURE);
+    err_exit("i.sh: error creating tokens buf or tokenv NULL", EXIT_FAILURE);
   }
 
   semantic_token_t **token_vec = tokenv;
