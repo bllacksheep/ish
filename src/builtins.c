@@ -59,7 +59,7 @@ enum match bt_is_builtin(char *key) {
 
 size_t bt_get_fn_count(void) {
   builtin_t *list_of_builtins = bt_get_builtins();
-  return sizeof(*list_of_builtins);
+  return sizeof(list_of_builtins[0]) * MAX_NUM_BUILTINS;
 }
 
 void bt_init_builtins_table(ht_table_t table) {

@@ -51,14 +51,9 @@ STATIC const ht_item_t *item_lookup_slot(const ht_table_t ht,
   }
 
   unsigned attempt = 0;
-  unsigned try = item_hash(item_key, item_key_len, attempt);
-  /*
-   ht_item_t *base = (ht_item_t *)ht;
-   const ht_item_t *item = &base[try];
- */
 
   while (1) {
-    try = item_hash(item_key, item_key_len, attempt);
+    unsigned try = item_hash(item_key, item_key_len, attempt);
     const ht_item_t *item = ht->items[try];
     if (item == NULL) {
       fprintf(stderr, "i.sh: ht no item at index, code: %d", ERRHTNOITEM);
