@@ -48,7 +48,7 @@ handler_t bt_get_fn(ht_table_t table, char *key) {
   return handle;
 }
 
-int bt_is_builtin(char *key) {
+enum match bt_is_builtin(char *key) {
   ht_table_t table = shell_state_get_builtin_table();
   handler_t hd = bt_get_fn(table, key);
   if (hd != NULL) {

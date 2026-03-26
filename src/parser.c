@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "builtins.h"
 #include "errors.h"
 #include "ht.h"
 #include "shell.h"
@@ -117,20 +118,10 @@ int is_expression(char *buf) {
 }
 
 int is_builtin(char *buf) {
-  if (bt_is_builtin(buf) == MATCH) {
-    return MATCH;
-  }
-  return !MATCH;
-  /*
   if (buf == NULL) {
     err_exit("no buffer in builtin", ERRNOBUFFER);
   }
-  builtin_t *b = get_builtins();
-  for (int i = 0; i < TOKEN_MAX_COUNT && b[i].name != NULL; i++) {
-    if (strcmp(buf, b[i].name) == MATCH)
-      return MATCH;
-  }
-  return !MATCH;
+  return bt_is_builtin(buf);
 }
 
 // set the type of the member argv
@@ -297,79 +288,79 @@ void parser_evaluate_expressions(size_t argc, semantic_token_t **tokenv) {
         if ((*token_vec)->buf != NULL)
           free((*token_vec)->buf);
         */
-  ht_table_t token_table = shell_get_token_table();
-  (*token_vec)->buf = (char *)ht_get_item(token_table, key);
-  (*token_vec)->type = COMMAND;
-  state = DONE;
-  break;
-}
-break;
-case CREATEKEY:
-if (isalpha(*curr_token_pos)) {
-  key[i] = *curr_token_pos;
-  curr_token_pos++;
-  break;
-}
-if (*curr_token_pos == '=') {
-  // next increment will be to 0
-  i = -1;
-  state = CREATEVALUE;
-  // skip '='
-  curr_token_pos++;
-  break;
-}
-if (*curr_token_pos == '$') {
-  // feel like I need to reset key here
-  curr_token_pos++;
-  state = GETVALUE;
-}
-state = ERROR;
-break;
-case CREATEVALUE:
-if (isalpha(*curr_token_pos) || isdigit(*curr_token_pos)) {
-  val[i] = *curr_token_pos;
-  curr_token_pos++;
-  break;
-}
-if (*curr_token_pos == '\0' || *curr_token_pos == ' ') {
-  // retain shell session variable state here
-  // add value to hash table
-  ht_table_t token_table = shell_get_token_table();
-  if (ht_put_item(token_table, key, val, STRING) == EXIT_SUCCESS) {
-    // since this is an expression this token is no longer useful
-    state = NEXT;
-    break;
+        ht_table_t token_table = shell_state_get_token_table();
+        (*token_vec)->buf = (char *)ht_get_item(token_table, key);
+        (*token_vec)->type = COMMAND;
+        state = DONE;
+        break;
+      }
+      break;
+    case CREATEKEY:
+      if (isalpha(*curr_token_pos)) {
+        key[i] = *curr_token_pos;
+        curr_token_pos++;
+        break;
+      }
+      if (*curr_token_pos == '=') {
+        // next increment will be to 0
+        i = -1;
+        state = CREATEVALUE;
+        // skip '='
+        curr_token_pos++;
+        break;
+      }
+      if (*curr_token_pos == '$') {
+        // feel like I need to reset key here
+        curr_token_pos++;
+        state = GETVALUE;
+      }
+      state = ERROR;
+      break;
+    case CREATEVALUE:
+      if (isalpha(*curr_token_pos) || isdigit(*curr_token_pos)) {
+        val[i] = *curr_token_pos;
+        curr_token_pos++;
+        break;
+      }
+      if (*curr_token_pos == '\0' || *curr_token_pos == ' ') {
+        // retain shell session variable state here
+        // add value to hash table
+        ht_table_t token_table = shell_state_get_token_table();
+        if (ht_put_item(token_table, key, val, STRING) == EXIT_SUCCESS) {
+          // since this is an expression this token is no longer useful
+          state = NEXT;
+          break;
+        }
+        state = ERROR;
+        break;
+      }
+      // if $x then x should already be in ht
+      if (*curr_token_pos == '$') {
+        curr_token_pos++;
+        val[i] = *curr_token_pos;
+        state = GETVALUE;
+        break;
+      }
+      state = ERROR;
+      break;
+    case ERROR:
+      return;
+    case NEXT:
+      i = -1;
+      memset(key, 0, sizeof(key));
+      memset(val, 0, sizeof(val));
+      // if buffer exausted next token, else potentially input 'x=1 $y'
+      if (*curr_token_pos == '\0')
+        token_vec++;
+      state = IDLE;
+      break;
+    case DONE:
+      return;
+    default:
+      return;
+      break;
+    }
   }
-  state = ERROR;
-  break;
-}
-// if $x then x should already be in ht
-if (*curr_token_pos == '$') {
-  curr_token_pos++;
-  val[i] = *curr_token_pos;
-  state = GETVALUE;
-  break;
-}
-state = ERROR;
-break;
-case ERROR:
-return;
-case NEXT:
-i = -1;
-memset(key, 0, sizeof(key));
-memset(val, 0, sizeof(val));
-// if buffer exausted next token, else potentially input 'x=1 $y'
-if (*curr_token_pos == '\0')
-  token_vec++;
-state = IDLE;
-break;
-case DONE:
-return;
-default:
-return;
-break;
-}
-}
 }
 
 void parser_promote_tokens_to_argv(size_t *argc, char **argv,
@@ -420,7 +411,7 @@ void parser_simple_parser(const char *buf) {
 
   // soft max on num args per command
   // who is going to own this
-  semantic_token_t **tvec = shell_get_token_vector();
+  semantic_token_t **tvec = shell_state_get_token_vector();
   parser_create_tokens(input, tvec, &tc);
   parser_evaluate_expressions(tc, tvec);
   parser_promote_tokens_to_argv(&argc, argv, tvec);
@@ -429,7 +420,8 @@ void parser_simple_parser(const char *buf) {
   size_t i = 0;
   size_t j = 0;
 
-  shell_set_command_state(tvec, tc, it, i, j, argc, argv);
+  shell_state_set_execution_context(tvec, tc, it, i, j, argc, argv);
+
   return;
 }
 

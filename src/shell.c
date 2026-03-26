@@ -187,9 +187,10 @@ void shell_state_set_input_handler(char *command) {
   st->handler = shell_state_get_default_handler();
 }
 
-void shell_state_set_input_state(semantic_token_t **tokens, size_t token_count,
-                                 size_t it_x, size_t it_i, size_t it_j,
-                                 size_t ac, char **av) {
+void shell_state_set_execution_context(semantic_token_t **tokens,
+                                       size_t token_count, size_t it_x,
+                                       size_t it_i, size_t it_j, size_t ac,
+                                       char **av) {
 
   shell_state_set_input_tokens(tokens, token_count);
   shell_state_set_input_it_x(it_x);
