@@ -114,7 +114,7 @@ shell_state_t *shell_get_shell_state(void) {
 
 semantic_token_t **shell_get_token_vector(void) {
   shell_state_t *st = shell_get_shell_state();
-  return st->tokenvec;
+  return st->token_vector;
 }
 
 ht_table_t shell_get_token_table(void) {
@@ -166,11 +166,14 @@ void shell_set_input_argc(size_t argc) {
   st->argc = argc;
 }
 
+// needs to be set in builtins.c or not at all
+/*
 // handler set to execvp by default
 void shell_set_shell_builtins(ht_table_t builtins) {
   shell_state_t *st = shell_get_shell_state();
   st->builtins = builtins;
 }
+*/
 
 // set up default handler here
 handler_t shell_get_default_handler() { return NULL; }
@@ -178,10 +181,14 @@ handler_t shell_get_default_handler() { return NULL; }
 // find of feel like hanlder just needs to be void* at this point
 void shell_set_input_handler(char *command) {
   shell_state_t *st = shell_get_shell_state();
+
+  // get built bt name table + command
+  /*
   handler_t handle = bt_get_fn(st->builtins, command);
   if (handle != NULL) {
     st->handler = handle;
   }
+  */
   st->handler = shell_get_default_handler();
 }
 
@@ -214,6 +221,8 @@ void shell_execution_handler(size_t argc, char **argv) {
       builtin(argc, argv);
     }
     */
+
+    /*
     // walks built ins every time and compares, kind of bogus
     for (size_t i = 0; i < MAX_BUILTINS; i++) {
       // will move to hashmap in builtins.c
@@ -227,7 +236,7 @@ void shell_execution_handler(size_t argc, char **argv) {
         break;
       }
     }
-
+    */
     // if $y not set, exit and do nothing
     if (argv[0][0] == '\0' && argc == 1) {
       exit(EXIT_SUCCESS);
