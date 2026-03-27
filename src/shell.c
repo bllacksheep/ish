@@ -178,16 +178,14 @@ void shell_set_shell_builtins(ht_table_t builtins) {
 handler_t shell_state_get_default_handler() { return NULL; }
 
 // find of feel like hanlder just needs to be void* at this point
-void shell_state_set_input_handler(char *command) {
+void shell_state_set_input_handler(char *fn) {
   shell_state_t *st = shell_get_shell_state();
-
+  ht_table_t bt = shell_state_get_builtin_table();
   // get built bt name table + command
-  /*
-  handler_t handle = bt_get_fn(st->builtins, command);
+  handler_t handle = bt_get_fn(bt, fn);
   if (handle != NULL) {
     st->handler = handle;
   }
-  */
   st->handler = shell_state_get_default_handler();
 }
 
